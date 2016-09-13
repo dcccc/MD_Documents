@@ -21,7 +21,7 @@
 
 ```bash
 [root@node21 ~]$ wget http://mirrors.163.com/.help/CentOS6-Base-163.repo
-yum makecache
+[root@node21 ~]$ yum makecache
 ```
 
 4.  安装基本依赖环境
@@ -173,6 +173,7 @@ ifort version 15.0.1
 
 ###openmpi的安装
 
+####使用intel编译器安装openmpi
 解压文件
 
 ```bash
@@ -182,11 +183,12 @@ ifort version 15.0.1
 进入目录，开始
 
 ```bash
-[root@node21 ~]$ cd  openmpi-root
+[root@node21 ~]$ cd  openmpi
 [root@node21 ~]$ ./configure --prefix="/opt/openmpi" CC=icc CXX=icpc F77=ifort FC=ifort
 ```
 
 build并安装，“make”后面可以加上“-j8”，表示8核并行编译安装
+
 ```bash
 [root@node21 ~]$ make 
 [root@node21 ~]$ make install
@@ -223,6 +225,15 @@ Start the given program using Open RTE
 ```
 
 表明安装成功。
+
+####使用gcc编译器安装openmpi
+
+与使用intel编译器步骤大致相同，所不同的是在配置环境时，选择的编译器是gcc，即
+
+```bash
+[root@node21 ~]$ ./configure --prefix="/opt/openmpi" CC=gcc CXX=g++ F77=gfortran FC=gfortran
+```
+其它的步骤是一样的
 
 ###pwscf的安装
 
@@ -509,6 +520,7 @@ lammps安装最为简单
 修改license文件xxx.lic，将“hostname”改为(本机名)，安装license
 
 ```bash
+[root@node21 ~]$ Accelrys/LicensePack/linux/bin
 [root@node21 ~]$ lp_install  xxxx.lic
 ```
 
@@ -531,5 +543,255 @@ lammps安装最为简单
 ```
 
 Material studio安装完成
+
+###Gaussian 09的安装
+
+
+解压文件，并更改文件夹权限
+
+```bash
+[root@node21 ~]$ tar -zxf g09-x86.tar.bz2 
+[root@node21 ~]$ chmod -R 750 g09
+```
+
+在g09文件夹中新建文件夹scrach，并更改权限
+
+```bash
+[root@node21 ~]$ mkdir g09/scrach 
+[root@node21 ~]$ chmod -R 755 g09/scrach
+```
+
+将下面内容加入环境变量文件.bashrc中,并将yourname改为自己用户名名称
+
+```
+#gaussian09
+export g09root=/home/yourusername
+GAUSS_EXEDIR=$g09root/g09/
+export GAUSS_SCRDIR=/home/yourusername/g09/scratch
+LD_LIBRARY_PATH=$g09root/g09/:$LD_LIBRARY_PATH
+PATH=$g09root/g09/:$PATH
+export g09root GAUSS_EXEDIR GAUSS_SCRDIR LD_LIBRARY_PATH PATH
+source $g09root/g09/bsd/g09.profile
+```
+
+使其生效
+
+```bash
+[root@node21 ~]$ source ~/.bahsrc
+```
+
+测试安装
+
+```bash
+[root@node21 ~]$ cd g09/tests/com
+[root@node21 ~]$ g09 test1.com &
+```
+
+如果能正常运行，安装成功。
+
+在安装之前，最好新建一个用户群组，将需要用Gaussian的户加入到群组中。
+
+
+###nwchem的安装
+####使用gcc编译器安装nwchem
+
+在使用gcc编译器安装好openmpi后，在环境变量.bashrc文件中加入以下内容：
+
+```bash
+export NWCHEM_TOP=/opt/nwchem-6.6  #nwchem的目录位置
+export NWCHEM_TARGET=LINUX64
+export NWCHEM_MODULES=all
+export USE_MPI=y
+export USE_MPIF=y
+export USE_MPIF4=y
+export MPI_LOC=/opt/openmpi-gcc/openmpi/   #gcc编译的openmpi的位置
+export MPI_LIB=/opt/openmpi-gcc/openmpi/lib  
+export MPI_INCLUDE=/opt/openmpi-gcc/openmpi/include  
+export LIBMPI="-lmpi_f90 -lmpi_f77 -lmpi -ldl -Wl,--export-dynamic -lnsl -lutil"
+export MRCC_METHODS=y
+export PYTHON_EXE=/usr/bin/python   #python的依赖
+export PYTHONVERSION=2.7    
+export USE_PYTHON64=yes
+export PYTHONPATH=/usr/local/lib/python2.7/site-packages
+export PYTHONHOME=/usr
+export PYTHONLIBTYPE=a
+export CCSDTQ=yes
+export USE_INTERNALBLAS=y  #使用自带的数学库安装
+```
+
+source生效后，进入nwchem开始安装
+
+```bash
+[root@node21 ~]$ cd nwchem-6.6/src
+[root@node21 ~]$ make nwchem_config  
+[root@node21 ~]$ make -j12   
+```
+
+-j12 表示12核并行编译，与编译openmpi一样，速度快的多
+
+编译完成，没有出错的话，在nwchem-6.6/bin/LINUX64目录下生成nwchem的可执行文件
+
+新建test.nw文件，写入以下内容
+
+```
+title "Nitrogen cc-pvtz SCF geometry optimization"
+geometry
+n 0 0 0
+n 0 0 1.08
+end
+basis
+n library cc-pvtz
+end
+task scf optimize   
+```
+然后开始测试nwchen
+
+```bash
+[root@node21 ~]$ nwchen test.nw > test.out &            #单线程
+[root@node21 ~]$ mpirun -np 4 test.nw > test.out &      #多线程  
+```
+
+mpirun 命令为gcc编译的openmpi
+然后查看输出，正常说明安装成功。
+
+####使用gcc编译器安装nwchem
+
+与使用gcc编译器安装基本相同，在安装时将加入环境变量里面的openmpi的目录改为intel编译的openmpi位置，同时去掉
+```bash
+export CCSDTQ=yes
+```
+
+开始安装
+
+```bash
+[root@node21 ~]$ cd nwchem-6.6/src
+[root@node21 ~]$ make nwchem_config  
+[root@node21 ~]$ make FC=ifort CC=icc -j12   
+```
+
+编译完成后，同样在nwchem-6.6/bin/LINUX64目录下生成nwchem的可执行文件。接下来就可以测试安装是否成功。
+
+
+###siesta的安装
+
+siesta的安装需要intel编译器和openmpi
+
+下载解压文件，进入目录
+
+```bash
+[root@node21 ~]$ tar -xzf siesta-4.0.tgz
+[root@node21 ~]$ cd siesta-4.0/Obj    
+```
+
+开始安装
+
+```bash
+[root@node21 ~]$ sh ../Src/obj_setup.sh
+[root@node21 ~]$ cd ../Src
+[root@node21 ~]$ ./configure  --enable-mpi FC=mpif90   #mpif90为intel编译器编译的openmpi中的mpif90
+[root@node21 ~]$ cp arch.make ../Obj
+[root@node21 ~]$ cd ../Obj    
+```
+
+修改siesta-4.0-rc2/Obj的arch.make文件，主要修改BLAS、LAPACK、BLACS、SCALAPACK这几个数学库的位置，这里直接使用intel编译器自带的mkl库中有的
+
+```
+BLAS_LIBS=-L/opt/intel/composer_xe_2013.2.146/mkl/lib/intel64  -lmkl_blas95_lp64 -lmkl_intel_lp64
+LAPACK_LIBS=-L/opt/intel/composer_xe_2013.2.146/mkl/lib/intel64  -lmkl_sequential -lmkl_lapack95_lp64 -lmkl_core
+BLACS_LIBS=-L/opt/intel/composer_xe_2013.2.146/mkl/lib/intel64 -lmkl_blacs_openmpi_lp64
+SCALAPACK_LIBS=-L/opt/intel/composer_xe_2013.2.146/mkl/lib/intel64 -lmkl_scalapack_lp64  
+```
+
+查看“FC=”这一行，看是否是“FC=mpif90”
+
+修改完成后，开始编译安装
+
+```bash
+[root@node21 ~]$ make 
+```
+
+安装完成，没有报错的话，安装完成后会在Obj目录下生成siesta的课可执行文件
+然后需要测试安装是否成功
+
+新建文件Ag.fdf，写入一下内容(即siesta-4.0/Obj/Tests/ag/ag.fdf得文件内容)
+
+```
+#
+# System which gives problems with split
+# To see them, uncomment the PAO.FixSplitTable directive
+#
+SystemName          Ag test
+SystemLabel         ag
+NumberOfAtoms       1
+NumberOfSpecies     1
+
+Reparametrize.Pseudos T       # Options for more accuracy
+Restricted.Radial.Grid F
+
+
+XC.functional    GGA
+XC.authors       PBE
+
+Meshcutoff 100 Ry
+
+%block ChemicalSpeciesLabel
+1  47 Ag
+%endblock ChemicalSpeciesLabel
+
+# Full template for Basis parameters
+#
+Basis.Pressure 0.02 GPa         # As in Anglada et al
+
+PAO.FixSplitTable T
+
+#PAO.SoftDefault    T           # Global soft-confinement options
+#PAO.SoftPotential $Global_Vsoft Ry    
+#PAO.SoftInnerRadius $Global_Soft_Radius
+#
+
+PAO.BasisType    split
+%block PAO.Basis                                   # Define Basis set
+Ag   3 0.0700000 
+n=5   0   2   S 0.1500000 E 4.5000000 -0.9000000  
+4.9700000 0.000000
+1.00000   1.000000 
+n=5   1   1  E 2.9200000 -0.5000000
+5.0100000
+1.00000   
+n=4   2   2 S 0.1500000 E 4.9400000 -0.5000000
+5.1200000 0.000000       
+1.00000   1.000000  
+%endblock PAO.Basis
+
+LatticeConstant     4.09 Ang
+%block LatticeVectors
+0.500  0.500  0.000
+0.500  0.000  0.500
+0.000  0.500  0.500
+%endblock LatticeVectors
+
+%block AtomicCoordinatesAndAtomicSpecies
+  0.000000 0.0000 0.0000  1
+%endblock AtomicCoordinatesAndAtomicSpecies
+```	       
+
+在http://departments.icmab.es/leem/siesta/Databases/Pseudopotentials/periodictable-intro.html下载Ag的GGA赝势文件Ag.psf文件，放在Ag.fdf同一目录下，开始测试
+
+```bash
+[root@node21 ~]$ siesta < Ag.fdf > Ag.out &                #单线程
+[root@node21 ~]$ mpirun -np 4 siesta < Ag.fdf > Ag.out &   #多线程
+```
+
+然后查看输出，正常说明安装成功
+
+以上的安装方法单线程正常运行，似乎多线程有问题。解决多线程的问题的话，似乎不能使用高版本的intel编译器，需要单独安装BLAS、LAPACK、BLACS、SCALAPACK这几个数学库。安装着几个库有点麻烦，这里没有尝试。
+
+
+
+
+
+
+
+
 
 
