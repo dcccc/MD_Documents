@@ -351,7 +351,7 @@ export PATH=/xxx/espresso-5.x.0/bin:$PATH
 .........
 # C-preprocessor
 CPP     = gcc -E -P -C $*.F >$*.f
-FC=ifc
+FC=ifc          #修改
 
 CFLAGS = -O
 FFLAGS = -O0 -FI
@@ -382,7 +382,7 @@ makefile修改为
 SUFFIX=.f90
 
 
-FC=ifort
+FC=ifort       #需修改
 
 FCL=$(FC)
 
@@ -403,13 +403,13 @@ DEBUG  = -FR -O0
 INLINE = $(OFLAG)
 
 
-MKL_ROOT=/opt/intel/composer_xe_2013.2.146/mkl
-MKL_PATH=$(MKLROOT)/lib/intel64
+MKL_ROOT=/opt/intel/composer_xe_2013.2.146/mkl      #需修改
+MKL_PATH=$(MKLROOT)/lib/intel64                     #需修改
 
-MKL_FFTW_PATH=$(MKLROOT)/interfaces/fftw3xf/
+MKL_FFTW_PATH=$(MKLROOT)/interfaces/fftw3xf/        #需修改
 
 
-BLAS=  /opt/GotoBLAS2/libgoto2.so
+BLAS=  /opt/GotoBLAS2/libgoto2.so                   #需修改
 
 
 LAPACK= ../vasp.5.lib/lapack_double.o
@@ -434,7 +434,7 @@ FFT3D   = fft3dfurth.o fft3dlib.o
 
 
 
-FC=mpif90
+FC=mpif90                  #需修改
 FCL=$(FC)  -mkl
 
 
@@ -446,11 +446,11 @@ CPP    = $(CPP_) -DMPI  -DHOST=\"LinuxIFC\" -DIFC \
 
 
 
-BLACS= -L$(MKL_PATH) -lmkl_blacs95_lp64
+BLACS= -L$(MKL_PATH) -lmkl_blacs95_lp64              #需修改
 
-SCA= /opt/intel/composer_xe_2013.2.146/mkl/lib/intel64/libmkl_scalapack_lp64.a  /opt/intel/composer_xe_2013.2.146/mkl/lib/intel64/libmkl_blacs_intelmpi_lp64.a
+SCA= /opt/intel/composer_xe_2013.2.146/mkl/lib/intel64/libmkl_scalapack_lp64.a  /opt/intel/composer_xe_2013.2.146/mkl/lib/intel64/libmkl_blacs_intelmpi_lp64.a                  #需修改
 
-LAPACK=-L$(MKL_PATH) -lmkl_intel_lp64 -lmkl_sequential -lmkl_core -lpthread
+LAPACK=-L$(MKL_PATH) -lmkl_intel_lp64 -lmkl_sequential -lmkl_core -lpthread               #需修改
 
 
 
@@ -462,14 +462,14 @@ LIB     = -L../vasp.5.lib -ldmy  \
 
 FFT3D   = fftmpi.o fftmpi_map.o fft3dfurth.o fft3dlib.o 
 
-INCS = -I$(MKLROOT)/include/fftw
+INCS = -I$(MKLROOT)/include/fftw        #需修改
 
 
 BASIC=   symmetry.o symlib.o   lattlib.o  random.o   
 .........
 ```
 
-其中，主要修改的地方为intel编译器的库位置，以及GotoBLAS2库位置，即
+其中，主要修改的地方是makefile中intel编译器的库位置，以及GotoBLAS2库位置，即
 
 编译器        第8行与第58行
 mkl库位置     第27行与第72行
@@ -479,12 +479,75 @@ GotoBLAS2库   第33行
 安装
 
 ```bash
-[root@node21 ~]$ cd make
+[root@node21 ~]$ make
 ```
 
 完成后会在目录下生成名为“vasp”的可执行文件
 
-keen可能需要新建一个任务，测试是否安装成功
+需要新建一个任务，测试是否安装成功
+
+
+
+###vasp过渡态功能的安装
+
+与没有过渡态功能的安装相同，首先在/opt/intel/composer_xe_2013.2.146/mkl/interfaces/fftw3xf 目录下执行“make libintel64”，拷贝intel/composer_xe_2013.2.146/mkl/include/fftw目录下的fftw3.f，解压安装VASP.lib，之后开始vasp过渡态功能的安装
+
+从网站“http://theory.cm.utexas.edu/vtsttools/”上下载vtstcode.tgz，vtstscripts.tgz文件，将文件解压到vasp的主目录下覆盖
+
+进入vasp主目录，更改main.F文件，将2817行
+
+```
+CALL CHAIN_FORCE(T_INFO%NIONS,DYN%POSION,TOTEN,TIFOR, &
+     LATT_CUR%A,LATT_CUR%B,IO%IU6)
+```
+更改为
+
+```
+CALL CHAIN_FORCE(T_INFO%NIONS,DYN%POSION,TOTEN,TIFOR, &
+     TSIF,LATT_CUR%A,LATT_CUR%B,IO%IU6)
+```
+
+对于“hessian.F”, “dynconstr.F”, “dimer_heyden.F”, “gadget.F”这是个文件，保证在它们的头部有
+
+```
+USE main_mpi
+USE base 
+```
+
+这两个
+
+然后对于“dimer.F”, “chain.F”这两个文件，需要做一些修改
+
+
+```bash
+[root@node21 ~]$ sed -i 's/^\+#/#/' chain.F dimer.F
+```
+
+
+修改makefile
+
+```bash
+[root@node21 ~]$ cp makefile.linux_ifc_P4 makefile
+```
+
+在makefile中的“SOURCE=”一行中，在“chai.o”前添加以下内容
+
+```
+bfgs.o dynmat.o  instanton.o  lbfgs.o sd.o   cg.o dimer.o bbm.o \
+fire.o lanczos.o neb.o  qm.o opt.o
+```
+
+其余的修改则与没有过渡态功能的安装一样
+
+接下来就开始编译
+
+```bash
+[root@node21 ~]$ make
+```
+完成后会在目录下生成名为“vasp”的可执行文件
+
+需要新建一个过渡态的任务，测试是否安装成功
+
 
 
 ###lammps的安装
