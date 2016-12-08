@@ -530,7 +530,7 @@ USE base
 [root@node21 ~]$ cp makefile.linux_ifc_P4 makefile
 ```
 
-在makefile中的“SOURCE=”一行中，在“chai.o”前添加以下内容
+在makefile中的“SOURCE=”一行中，在“chain.o”前添加以下内容
 
 ```
 bfgs.o dynmat.o  instanton.o  lbfgs.o sd.o   cg.o dimer.o bbm.o \
@@ -656,6 +656,7 @@ source $g09root/g09/bsd/g09.profile
 
 
 ###nwchem的安装
+
 ####使用gcc编译器安装nwchem
 
 在使用gcc编译器安装好openmpi后，在环境变量.bashrc文件中加入以下内容：
@@ -719,7 +720,7 @@ mpirun 命令为gcc编译的openmpi
 
 ####使用gcc编译器安装nwchem
 
-与使用gcc编译器安装基本相同，在安装时将加入环境变量里面的openmpi的目录改为intel编译的openmpi位置，同时去掉
+与使用gcc编译器安装基本相同，在安装时将加入环境变量里面的openmpi的目录改为gcc编译的openmpi位置，同时去掉
 ```bash
 export CCSDTQ=yes
 ```
@@ -733,6 +734,8 @@ export CCSDTQ=yes
 ```
 
 编译完成后，同样在nwchem-6.6/bin/LINUX64目录下生成nwchem的可执行文件。接下来就可以测试安装是否成功。
+
+在实际安装过程中，我没有成功
 
 
 ###siesta的安装
@@ -853,8 +856,142 @@ LatticeConstant     4.09 Ang
 
 
 
+###Gamess的安装
+
+这里使用intel编译器安装2016版gamess。
+
+解压gamess
+
+```bash
+[root@node21 ~]$ tar -zxf 2016-Aug(R1).tar.gz
+
+```
+开始配置安装
+
+```bash
+[root@node21 ~]$ cd gamess
+[root@node21 gamess]$ ./config
+
+```
+接下来会出现多步选项，选择如下
+
+```
+[enter]
+linux64
+[enter]          #在当前位置安装
+[enter]          #在当前位置安装
+[enter]          #版本号为00
+ifort            #使用ifort编译gamess
+13               #使用ifort版本号为13，可以通过"ifort -v"查看
+[enter]   
+[enter]
+mkl              #使用mkl库
+/opt/intel/mkl   #intel mkl库的位置
+proceed
+[enter]
+[enter]
+sockets          #不使用并行
+no               #不尝试LIBCCHEM，这是用来通过nVidia的GPU加速HF和MP2任务用的，没有gpu加速卡，不需使用 
+
+```
+
+编译ddi
+
+```bash
+[root@node21 ~]$ cd ddi
+[root@node21 ddi]$ ./compddi
+[root@node21 ddi]$ mv  ddikick.x  ../      #将编译生成的ddikick.x移动到上一层目录，即gamess目录下
+```
+
+编译gamess
+
+```bash
+[root@node21 ~]$ cd ../
+[root@node21 gamess]$ ./compall >& complie.log &  #后台编译，编译信息写入complie.log文件
+
+```
+
+编译需要较长的时间，待编译完成后若在gamess目录项没有生恨gamess.00.x，则需手动链接产生可执行文件
+
+```bash
+[root@node21 gamess]$ ./lked gamess 00
+
+```
+
+ 配置运行环境
+
+建立gamess目录下建立scr初始缓存文件夹
+
+```bash
+[root@node21 gamess]$ mkdir scr
+```
+
+对gamess目录下rungms文件作如下修改：
+
+把set TARGET=sockets下面的三行改为
+
+```
+set SCR=/home/flw1/gamess/scr           #scr的绝对路径
+set USERSCR=/home/flw1/gamess/scr       #scr的绝对路径
+set GMSPATH=/home/flw1/gamess           #gamess的绝对路径
+```
+在
+把set TARGET=sockets前面加上一行，每次计算开始是都删除上次计算的初始缓存文件
+
+```bash
+rm -fr /home/flw1/gamess/scr/*
+```
+
+为多核计算，在rungms文件的"switch (`hostname`)"这行下面插入以下内容
+
+```
+         case xxx:              # xxx 为计算机的名称，可用hostname命令查看
+            set NNODES=1
+            set HOSTLIST=(`hostname`:cpus=$NCPUS)
+            breaksw
+````
+
+至此，安装配置完成。不过还需要测试安装是否成功
 
 
+```bash
+[root@node21 gamess]$ ./rungms test.gms.inp >& test.gms.out &       #单核
+[root@node21 gamess]$ ./rungms test.gms.inp 00 4 >& test.gms.out &  #4核并行
+```
+
+若输出文件中出现以下错误
+
+```
+......
+ DDI Process 0: error code 911
+ ddikick.x: application process 0 quit unexpectedly.
+ ddikick.x: Fatal error detected.
+ The error is most likely to be in the application, so check for
+ input errors, disk space, memory needs, application bugs, etc.
+ ddikick.x will now clean up all processes, and exit...
+ ddikick.x: Sending kill signal to DDI processes.
+......
+```
+
+则有可能是输入文件的格式或内容有问题
 
 
+###MOPAC2016的安装
+
+解压文件MOPAC2016_for_CentOS-6.zip
+
+```bash
+[root@node21 flw1]$ unzip MOPAC2016_for_CentOS-6.zip
+[root@node21 flw1]$ mv MOPAC  /opt/         #将目录移动到opt目录下
+[root@node21 flw1]$ cd /opt/MOPAC
+[root@node21 MOPAC]$ MOPAC2016.exe 11780405a29011200    激活MOPAC
+```
+至此MOPAC安装完成
+接着可以将"alias mopac='/opt/mopac/MOPAC2016.exe'"加入超环境变量中，这样就可以使用mopac
+
+提交计算的方式为
+
+```bash
+[root@node21 flw1]$ mopac test.mop.in &
+```
 
