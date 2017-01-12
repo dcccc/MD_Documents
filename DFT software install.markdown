@@ -235,6 +235,8 @@ Start the given program using Open RTE
 ```
 其它的步骤是一样的
 
+openmpi提供一个并行的环境，另外mpich也像openmpi一样，intel编译器也自带有并行的编译环境，具体的在intel/parallel_studio_xe_2016_update2/compilers_and_libraries_2016.2.181/linux/mpi/intel64/bin中，注意intel编译器的版本为2016版
+
 ###pwscf的安装
 
 从官网上下载espresso-5.x.0.tar.gz和neb-5.x.0.tar.gz
@@ -580,7 +582,7 @@ lammps安装最为简单
 
 ```
 
-修改license文件xxx.lic，将“hostname”改为(本机名)，安装license
+修改license文件xxx.lic，将“hostname”改为(本机名)，将license文件文件复制到.../LicensePack/Licenses，安装license
 
 ```bash
 [root@node21 ~]$ Accelrys/LicensePack/linux/bin
