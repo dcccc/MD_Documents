@@ -997,3 +997,25 @@ rm -fr /home/flw1/gamess/scr/*
 [root@node21 flw1]$ mopac test.mop.in &
 ```
 
+###Anaconda2的安装
+
+再官网下载合适的linux版的Anaconda2，然后传到计算机上，开始安装(推荐非root用户安装)
+
+
+```bash
+[flw@node21 flw]$ chmod +x Anaconda2-4.3.0-Linux-x86_64.sh
+[flw@node21 flw]$ ./Anaconda2-4.3.0-Linux-x86_64.sh
+```
+
+接下来第一步直接enter，第二步yes，第三步选择安装的位置，第四步设定环境变量，安装完成。然后退出重新登陆。
+
+由于centos自带低版本的python，因此需要重新设置
+
+```bash
+[flw@node21 flw]$ unset PYTHONHOME
+[flw@node21 flw]$ unset PYTHONPATH
+```
+
+然后运行python，测试是否安装成功。
+
+
