@@ -1019,3 +1019,96 @@ rm -fr /home/flw1/gamess/scr/*
 然后运行python，测试是否安装成功。
 
 
+###gpaw的安装
+
+使用pip安装ase（Atomic Simulation Environment）
+
+```bash
+[root@node21 flw1]$ pip install ase
+
+```
+
+自动安装完成ase后，开始安装libxc
+
+从官网上下载安装包，解压开始安装
+
+
+```bash
+ [root@node21 flw1]$ ./configure CC=icc --prefix="/home/flw/libxc" CFLAGS="-fPIC" 
+ [root@node21 flw1]$ make
+ [root@node21 flw1]$ make install
+
+```
+安装完成后，开始安装gpaw
+
+在开始安装gpaw之前需要重新安装openmpi，这里使用openmpi-2.1.0版
+
+```bash
+ [root@node21 flw1]$ tar -zxf  openmpi-2.1.0.tar.gz
+ [root@node21 flw1]$ cd  openmpi-2.1.0
+ [root@node21 flw1]$ ./configure --prefix="/home/flw/gpaw/openmpi" CC=icc CXX=icpc F77=ifort FC=ifort --disable-dlopen
+ [root@node21 flw1]$ make -j12     #-j12  表示12核并行编译  速度较单核快很多
+ [root@node21 flw1]$ make install
+
+```
+
+从官网上下载gpaw安装包，解压写改
+
+```bash
+compiler = 'gcc'       #c编译器
+mpicompiler = 'mpicc'  #mpicc编译器
+mpilinker = 'mpicc'    #mpicc编译器
+# platform_id = ''
+scalapack = False
+
+if 1:
+    include_dirs += ['/home/flw/gpaw/libxc/include']           #libxc头文件位置
+    extra_link_args += ['/home/flw/gpaw/libxc/lib/libxc.a']    #libxc库位置
+    if 'xc' in libraries:
+        libraries.remove('xc')
+
+
+# Build MPI-interface into _gpaw.so:
+if 1:
+    compiler = 'mpicc'
+    define_macros += [('PARALLEL', '1')]
+    mpicompiler = None
+
+library_dirs += ['/opt/intel/composer_xe_2013.2.146/mkl/lib/intel64']   #MKL数学库位置
+libraries = ['mkl_scalapack_lp64','mkl_intel_lp64','mkl_lapack95_lp64','mkl_blacs_openmpi_lp64']  #scalapack、lapack、blacs库
+include_dirs += ['/opt/intel/composer_xe_2013.2.146/mkl/include']       #MKL头文件位置
+
+define_macros += [('GPAW_NO_UNDERSCORE_CBLACS', '1')]
+define_macros += [('GPAW_NO_UNDERSCORE_CSCALAPACK', '1')]
+
+
+mpi_library_dirs = ['/home/flw/gpaw/openmpi/lib']            #上面安装的openmpi并行库位置
+mpi_include_dirs = ['/home/flw/gpaw/openmpi/include']        #上面安装的openmpi头文件位置
+mpi_runtime_library_dirs = ['/home/flw/gpaw/openmpi/lib']    #上面安装的openmpi并行库位置
+```
+
+开始安装
+
+```bash
+ [root@node21 flw1]$  python setup.py install --user
+
+```
+安装成功后会在gpaw主目录下的tools文件夹下生成gpaw的可执行文件，将该位置加入环境变量中，并source生效
+
+从官网下载gpaw-setups，解压后将目录位置加入环境变量中
+
+```bash
+ [root@node21 flw1]$  export GPAW_SETUP_PATH=/home/flw/gpaw/gpaw-setups-0.9.20000:GPAW_SETUP_PATH
+
+```
+
+
+测试gpw
+
+```bash
+ [root@node21 flw1]$  gpaw test
+
+```
+如果测试ok，则表示安装没有问题
+
+
