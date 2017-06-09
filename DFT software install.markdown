@@ -1054,7 +1054,7 @@ rm -fr /home/flw1/gamess/scr/*
 
 从官网上下载gpaw安装包，解压写改
 
-```bash
+```python
 compiler = 'gcc'       #c编译器
 mpicompiler = 'mpicc'  #mpicc编译器
 mpilinker = 'mpicc'    #mpicc编译器
@@ -1072,10 +1072,11 @@ if 1:
 if 1:
     compiler = 'mpicc'
     define_macros += [('PARALLEL', '1')]
-    mpicompiler = None
+    mpicompiler = 'mpicc'
 
 library_dirs += ['/opt/intel/composer_xe_2013.2.146/mkl/lib/intel64']   #MKL数学库位置
-libraries = ['mkl_scalapack_lp64','mkl_intel_lp64','mkl_lapack95_lp64','mkl_blacs_openmpi_lp64']  #scalapack、lapack、blacs库
+libraries = ['mkl_scalapack_lp64','mkl_intel_lp64','mkl_lapack95_lp64','mkl_blacs_openmpi_lp64','mkl_scalapack_lp64','mkl_intel_ilp64','mkl_lapack95_ilp64','mkl_blacs_openmpi_ilp64','mkl_intel_lp64' ,'mkl_sequential','mkl_core','pthread']
+  #scalapack、lapack、blacs库
 include_dirs += ['/opt/intel/composer_xe_2013.2.146/mkl/include']       #MKL头文件位置
 
 define_macros += [('GPAW_NO_UNDERSCORE_CBLACS', '1')]
