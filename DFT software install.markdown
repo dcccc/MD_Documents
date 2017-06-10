@@ -1132,16 +1132,62 @@ export PYTHONPATH=/home/flw/anaconda2/lib/python2.7/config/:/home/flw/anaconda2/
 
 ```
 
+如果在……/gpaw-1.2.0/build/bin.linux-x86_64-2.7目录下生成gpaw-python，运行
 
-测试gpw
+```bash
+[flw@node25 bin.linux-x86_64-2.7]$ ./gpaw-python
+Python 2.7.13 |Continuum Analytics, Inc.| (default, Dec 20 2016, 23:09:15)
+[GCC 4.4.7 20120313 (Red Hat 4.4.7-1)] on linux2
+Type "help", "copyright", "credits" or "license" for more information.
+Anaconda is brought to you by Continuum Analytics.
+Please check out: http://continuum.io/thanks and https://anaconda.org
+>>> import numpy  #导入numpy
+>>>               #导入成功
+[1]+  Stopped                 ./gpaw-python
+```
+则基本安装成功
+
+可以测试gpw
 
 ```bash
  [root@node21 flw1]$  gpaw test
+```
+
+如果测试ok，则表示安装没有问题。
+
+建立test.py文件
+
+```python
+
+from ase import Atoms
+from gpaw import GPAW
+
+d = 0.74
+a = 6.0
+
+atoms = Atoms('H2',
+              positions=[(0, 0, 0),
+                         (0, 0, d)],
+              cell=(a, a, a))
+atoms.center()
+
+calc = GPAW(nbands=2, txt='h2.txt')
+atoms.set_calculator(calc)
+print(atoms.get_forces())
 
 ```
-如果测试ok，则表示安装没有问题
 
+并行计算运行
 
+```bash
+[flw@node25 gpaw]$ mpirun -np 2 /home/flw/gpaw/gpaw-1.2.0/build/bin.linux-x86_64-2.7/gpaw-python  test.py &
+[2] 137480
+[flw@node25 gpaw]$ [[ -4.19127289e-13  -5.26325007e-15  -8.47361573e-01]
+ [ -5.60625597e-13   1.08171265e-13   8.47361573e-01]]
+[[ -4.19127289e-13  -5.26325007e-15  -8.47361573e-01]
+ [ -5.60625597e-13   1.08171265e-13   8.47361573e-01]]
 
-
-
+[2]-  Done                    mpirun -np 2 /home/flw/gpaw/gpaw-1.2.0/build/bin.linux-x86_64-2.7/gpaw-python test.py
+[flw@node25 gpaw]$
+```
+结果如上则安装成功
