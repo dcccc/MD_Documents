@@ -163,11 +163,10 @@ dcc@D MINGW64 ./eign_test.exe
 
 接下来第一步直接enter，第二步yes，第三步选择安装的位置，第四步设定环境变量，安装完成。然后退出重新登陆。
 
-由于centos自带低版本的python，因此需要重新设置
-
 ```bash
-[flw@node21 flw]$ unset PYTHONHOME
-[flw@node21 flw]$ unset PYTHONPATH
+export PYTHONHOME=/home/flw/anaconda2/bin:/home/flw/gpaw/gpaw-1.2.0/build/bin.linux-x86_64-2.7:/home/flw/gpaw/gpaw-1.2.0/build/scripts-2.7
+export PYTHONPATH=/home/flw/anaconda2/lib/python2.7/config/:/home/flw/anaconda2/pkgs/python-2.7.13-0/lib:/home/flw/anaconda2/pkgs/python-2.7.13-0/lib/python2.7/:/home/flw/anaconda2/lib/python2.7/site-packages:/home/flw/anaconda2/lib/python2.7:/home/flw/anaconda2/lib/python2.7/lib-dynload/:/home/flw/gpaw/gpaw-1.2.0/gpaw:/opt/intel/composer_xe_2015.0.090/mkl/lib/intel64
+#均是与anaconda2相关的路径位置
 ```
 
 然后运行python，测试是否安装成功。windows上安装较简单，这里不述。
