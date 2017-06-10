@@ -1021,7 +1021,7 @@ rm -fr /home/flw1/gamess/scr/*
 
 ###gpaw的安装
 
-使用pip安装ase（Atomic Simulation Environment）
+安装好anaconda2后，使用pip安装ase（Atomic Simulation Environment）
 
 ```bash
 [root@node21 flw1]$ pip install ase
@@ -1052,6 +1052,24 @@ rm -fr /home/flw1/gamess/scr/*
 
 ```
 
+修改.bashrc文件
+
+```
+export LD_LIBRARY_PATH=/opt/intel/composer_xe_2013.2.146/mkl/lib/intel64:$LD_LIBRARY_PATH     #mkl库位置
+export PATH=/home/flw/gpaw/openmpi/bin:$PATH         #openmpi的mpirun位置
+export LD_LIBRARY_PATH=/home/flw/gpaw/openmpi/lib:$LD_LIBRARY_PATH  #openmpi的库位置
+export C_INCLUDE_PATH=/home/flw/gpaw/openmpi/include:$C_INCLUDE_PATH  #openmpi的头文件位置
+
+export C_INCLUDE_PATH=/home/flw/gpaw/fftw/include:$C_INCLUDE_PATH  #fftw的头文件位置
+export LD_LIBRARY_PATH=/home/flw/gpaw/fftw/lib:$LD_LIBRARY_PATH   #fftw的库位置
+
+export C_INCLUDE_PATH=/home/flw/gpaw/libxc/include:/home/flw/anaconda2/pkgs/python-2.7.13-0/include/python2.7:$C_INCLUDE_PATH
+export  #libxc的头文件位置以及anaconda2的python头文件位置 LD_LIBRARY_PATH=/home/flw/gpaw/libxc/lib:/home/flw/anaconda2/lib:/home/flw/anaconda2/lib/python2.7/config/:$LD_LIBRARY_PATH   #libxc的库位置以及anaconda2的python库位置
+
+export PATH=/home/flw/anaconda2/bin/bin/:$PATH
+```
+
+
 从官网上下载gpaw安装包，解压写改
 
 ```python
@@ -1074,7 +1092,7 @@ if 1:
     define_macros += [('PARALLEL', '1')]
     mpicompiler = 'mpicc'
 
-library_dirs += ['/opt/intel/composer_xe_2013.2.146/mkl/lib/intel64']   #MKL数学库位置
+library_dirs += ['/opt/intel/composer_xe_2013.2.146/mkl/lib/intel64',"/home/flw/anaconda2/lib/python2.7/config/"]   #MKL数学库位置和libpython2.7.a的位置
 libraries = ['mkl_scalapack_lp64','mkl_intel_lp64','mkl_lapack95_lp64','mkl_blacs_openmpi_lp64','mkl_scalapack_lp64','mkl_intel_ilp64','mkl_lapack95_ilp64','mkl_blacs_openmpi_ilp64','mkl_intel_lp64' ,'mkl_sequential','mkl_core','pthread']
   #scalapack、lapack、blacs库
 include_dirs += ['/opt/intel/composer_xe_2013.2.146/mkl/include']       #MKL头文件位置
@@ -1087,6 +1105,17 @@ mpi_library_dirs = ['/home/flw/gpaw/openmpi/lib']            #上面安装的ope
 mpi_include_dirs = ['/home/flw/gpaw/openmpi/include']        #上面安装的openmpi头文件位置
 mpi_runtime_library_dirs = ['/home/flw/gpaw/openmpi/lib']    #上面安装的openmpi并行库位置
 ```
+将环境变量加入.bash_profile中
+
+```bash
+export PYTHONHOME=/home/flw/anaconda2/bin:/home/flw/gpaw/gpaw-1.2.0/build/bin.linux-x86_64-2.7:/home/flw/gpaw/gpaw-1.2.0/build/scripts-2.7
+export PYTHONPATH=/home/flw/anaconda2/lib/python2.7/config/:/home/flw/anaconda2/pkgs/python-2.7.13-0/lib:/home/flw/anaconda2/pkgs/python-2.7.13-0/lib/python2.7/:/home/flw/anaconda2/lib/python2.7/site-packages:/home/flw/anaconda2/lib/python2.7:/home/flw/anaconda2/lib/python2.7/lib-dynload/:/home/flw/gpaw/gpaw-1.2.0/gpaw:/opt/intel/composer_xe_2015.0.090/mkl/lib/intel64
+#均是与anaconda2相关的路径位置
+
+```
+
+
+
 
 开始安装
 
@@ -1111,5 +1140,8 @@ mpi_runtime_library_dirs = ['/home/flw/gpaw/openmpi/lib']    #上面安装的ope
 
 ```
 如果测试ok，则表示安装没有问题
+
+
+
 
 
