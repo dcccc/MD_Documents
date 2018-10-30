@@ -1,0 +1,2033 @@
+##量子化学服务器配置
+
+###Linux系统的安装
+自行百度
+
+###环境配置
+在确定连接上了网络后，就可以开始配置环境了。
+
+1.  进入yum源目录
+
+```bash
+[root@node21 ~]$ cd /etc/yum.repos.d 
+```
+2.  备份系统自带的yum源
+
+```bash
+[root@node21 ~]$ mv CentOS-Base.repo CentOS-Base.repo.bak
+```
+
+3.  下载163，清华大学镜像等国内的yum源，具体可以在网上直接搜索“清华大学镜像”，在官网就有相应的教程
+
+
+
+4.  安装基本依赖环境
+
+```bash
+[root@node21 ~]$ yum groupinstall "Development Tools"
+```
+
+5. gcc编译器的安装
+
+```bash
+[root@node21 ~]$ yum install gcc
+```
+
+###Intel编译器的安装
+这里安装的是2013版，为parallel_studio_xe_2013_update2
+
+解压文件
+
+```bash
+[root@node21 ~]$ tar -zxf  parallel_studio_xe_2013_update2.tgz
+```
+
+进入到parallel_studio_xe_2013_update2中，开始安装
+
+```bash
+[root@node21 ~]$ ./install.sh
+```
+出现
+
+```
+Step no: 1 of 7 | Welcome
+--------------------------------------------------------------------------------
+Welcome to the Intel(R) Parallel Studio XE 2013 Update 2 for Linux* installation program.
+--------------------------------------------------------------------------------
+
+You will complete the steps below during this installation:
+Step 1 : Welcome
+Step 2 : License
+Step 3 : Activation
+Step 4 : Intel(R) Software Improvement Program
+Step 5 : Options
+Step 6 : Installation
+Step 7 : Complete
+--------------------------------------------------------------------------------
+Press "Enter" key to continue or "q" to quit:
+```
+
+直接按“Enter”
+
+若出现
+
+```
+Step no: 1 of 7 | Options > Missing Optional Pre-requisite(s)
+--------------------------------------------------------------------------------
+There are one or more optional unresolved issues. It is highly recommended to
+resolve them all before you continue the installation. You can fix them without
+exiting from the installation and re-check. Or you can quit from the installation, fix them and run the installation again.
+--------------------------------------------------------------------------------
+Missing optional pre-requisites
+-- Intel(R) Composer XE 2013 Update 2 for Linux*: unsupported OS
+--------------------------------------------------------------------------------
+1. Skip missing optional pre-requisites [default]
+2. Show the detailed info about issue(s)
+3. Re-check the pre-requisites
+h. Help
+b. Back to the previous menu
+q. Quit
+--------------------------------------------------------------------------------
+Please type a selection or press "Enter" to accept default choice [1]:
+```
+直接按“Enter”
+
+接下来输入“accept”并“Enter”
+
+```
+Step no: 3 of 7 | Activation
+--------------------------------------------------------------------------------
+If you have purchased this product and have the serial number and a connection to the internet you can choose to activate the product at this time. Activation is a secure and anonymous one-time process that verifies your software licensing rights to use the product. Alternatively, you can choose to evaluate the product or defer activation by choosing the evaluate option. Evaluation software will time out in about one month. Also you can use license file, license manager, or remote activation if the system you are installing on does not have internet access activation options.
+--------------------------------------------------------------------------------
+1. I want to activate my product using a serial number [default]
+2. I want to evaluate my product or activate later
+3. I want to activate either remotely, or by using a license file, or by using a license manager
+h. Help
+b. Back to the previous menu
+q. Quit
+--------------------------------------------------------------------------------
+Please type a selection or press "Enter" to accept default choice [1]:
+```
+
+输入“3”并“Enter”
+
+```
+Step no: 3 of 7 | Activation > Advanced activation
+--------------------------------------------------------------------------------
+You can use license file, license manager, or the system you are installing on does not have internet access activation options.
+--------------------------------------------------------------------------------
+1. Use a different computer with internet access [default]
+2. Use a license file
+3. Use a license server
+h. Help
+b. Back to the previous menu
+q. Quit
+--------------------------------------------------------------------------------
+Please type a selection or press "Enter" to accept default choice [1]: 
+
+```
+
+输入“2”并“Enter”
+
+```
+Note: Press "Enter" key to back to the previous menu.
+Please type the full path to your license file(s):
+```
+
+输入license的路径并“Enter”
+
+接下问是否加入改进，选择“2”
+
+接下来直接“Enter”，默认安装到/opt/intel目录下
+
+再接下来直接安装，安装完成后直接退出就可以了
+
+配置环境变量，包括可执行文件文位置，库位置以及头文件位置
+
+```
+source   /opt/intel/intel_2015/composer_xe_2015.0.090/bin/compilervars.sh intel64
+source   /opt/intel/intel_2015/composer_xe_2015.0.090/bin/iccvars.sh intel64
+source   /opt/intel/intel_2015/composer_xe_2015.0.090/bin/ifortvars.sh intel64
+
+source   /opt/intel/intel_2015/impi/5.0.1.035/intel64/bin/mpivars.sh
+source   /opt/intel/intel_2015/composer_xe_2015.0.090/mkl/bin/mklvars.sh intel64
+export PATH=/opt/intel/composer_xe_2013.2.146/bin:$PATH
+
+export LD_LIBRARY_PATH=/opt/intel/composer_xe_2013.2.146/compiler/lib/intel64:$LD_LIBRARY_PATH
+
+export C_INCLUDE_PATH=/opt/intel/composer_xe_2013.2.146/compiler/include:$C_INCLUDE_PATH
+export CPLUS_INCLUDE_PATH=/opt/intel/composer_xe_2013.2.146/compiler/include:$CPLUS_INCLUDE_PATH
+```
+
+将上面的加入到自己用户目录下的.bashrc中，然后
+
+```bash
+[root@node21 ~]$ source .bashrc
+```
+
+测试安装是否成功
+
+```bash
+[root@node21 ~]$ ifort -v
+ifort version 15.0.1
+```
+出现以上“ifort version 15.0.1”，表明安装成功
+
+
+
+
+###openmpi的安装
+
+####使用intel编译器安装openmpi
+解压文件
+
+```bash
+[root@node21 ~]$ tar -zxf openmpi-root.tar.gz
+```
+
+进入目录，开始
+
+```bash
+[root@node21 ~]$ cd  openmpi
+[root@node21 ~]$ ./configure --prefix="/opt/openmpi" CC=icc CXX=icpc F77=ifort FC=ifort
+```
+
+build并安装，“make”后面可以加上“-j8”，表示8核并行编译安装
+
+```bash
+[root@node21 ~]$ make 
+[root@node21 ~]$ make install
+```
+
+安装完成后，将下面加入到自己用户目录下的.bashrc中
+
+```
+export PATH=/opt/openmpi/bin:$PATH
+export LD_LIBRARY_PATH=/opt/openmpi/lib:$LD_LIBRARY_PATH
+```
+
+并
+
+```bash
+[root@node21 ~]$ source .bashrc
+```
+
+接下来
+
+```bash
+[root@node21 ~]$ mpirun
+```
+
+若出现
+
+```
+mpirun (Open MPI) 1.5
+
+Usage: mpirun [OPTION]...  [PROGRAM]...
+Start the given program using Open RTE
+
+.........
+```
+
+表明安装成功。
+
+
+####使用gcc编译器安装openmpi
+
+与使用intel编译器步骤大致相同，所不同的是在配置环境时，选择的编译器是gcc，即
+
+```bash
+[root@node21 ~]$ ./configure --prefix="/opt/openmpi" CC=gcc CXX=g++ F77=gfortran FC=gfortran
+```
+其它的步骤是一样的
+
+openmpi提供一个并行的环境，另外mpich也像openmpi一样，intel编译器也自带有并行的编译环境，具体的在intel/parallel_studio_xe_2016_update2/compilers_and_libraries_2016.2.181/linux/mpi/intel64/bin中，注意intel编译器的版本为2016版
+
+
+将并行的可执行文件，库及头文件位置加入到环境变量.bashrc文件中
+
+```bash
+export LD_LIBRARY_PATH=/opt/openmpi/lib:$LD_LIBRARY_PATH
+export C_INCLUDE_PATH=/opt/openmpi/include:$C_INCLUDE_PATH
+export CPLUS_INCLUDE_PATH=/opt/openmpi/include:$CPLUS_INCLUDE_PATH
+```
+
+
+###QE的安装
+
+从官网上下载espresso-5.x.0.tar.gz和neb-5.x.0.tar.gz
+解压文件，并将neb移动到espresso-5.x.0文件夹中
+
+```bash
+[root@node21 ~]$ tar -zxf espresso-5.x.0.tar.gz
+[root@node21 ~]$ tar -zxf neb-5.x.0.tar.gz
+[root@node21 ~]$ mv neb-5.x.0 espresso-5.x.0/
+
+```
+
+开始配置安装
+
+```bash
+[root@node21 ~]$ cd espresso-5.x.0
+[root@node21 ~]$  MPIF90=mpiifort F77=ifort F90=ifort FC=ifort   
+
+```
+
+完成后
+
+```bash
+[root@node21 ~]$ make all
+
+```
+安装完成
+
+将下面加入到自己用户目录下的.bashrc中
+
+```
+export PATH=/xxx/espresso-5.x.0/bin:$PATH
+
+```
+并
+
+```bash
+[root@node21 ~]$ source .bashrc
+```
+
+接下来
+
+```bash
+[root@node21 ~]$ pw.x
+```
+若出现
+
+
+```
+     Program PWSCF v.5.0.1 starts on 15Apr2016 at  0:34:34
+
+     This program is part of the open-source Quantum ESPRESSO suite
+     for quantum simulation of materials; please cite
+         "P. Giannozzi et al., J. Phys.:Condens. Matter 21 395502 (2009);
+          URL http://www.quantum-espresso.org",
+     in publications or presentations arising from this work. More details at
+     http://www.quantum-espresso.org/quote.php
+
+     Parallel version (MPI), running on     1 processors
+.........
+```
+表明安装成功
+
+
+若需要链接libxc库，使用其中的泛函，则需编译好libxc后，修改make.sys或make.inc文件
+
+
+```
+DFLAGS         =  -D__DFTI -D__MPI -D__SCALAPACK -D__LIBXC   #添加 -D__LIBXC
+
+IFLAGS         = -I$(TOPDIR)/include -I/opt/libxc-4.0.4/include -I$(TOPDIR)/FoX/finclude -I../include/ -I/opt/intel/intel_2015/composer_xe_2015.0.090/mkl/include   #添加libxc头文件位置
+
+
+LD_LIBS        =-L/opt/libxc-4.0.4 -lxcf90 -lxc   #添加libxc库
+```
+
+主要是修改以上三个配置变量
+
+之后便是正常安装了，安装完成后可以建立简单任务，设置input_dft = "XC_GGA_C_PW91",  测试是否可以使用libxc中的泛函。
+
+
+###vasp安装
+
+####1.安装GotoBLAS
+
+```bash
+[root@node21 ~]$ tar -zxf GotoBLAS2-1.13_bsd.tar.gz
+[root@node21 ~]$ cd GotoBLAS2-1.13_bsd
+[root@node21 ~]$ ./quickbuild.64bit
+```
+
+若出现
+
+```
+../kernel/x86_64/gemm_ncopy_4.S:192: Error: undefined symbol RPREFETCHSIZE' in operation 
+../kernel/x86_64/gemm_ncopy_4.S:193: Error: undefined symbol RPREFETCHSIZE' in operation 
+../kernel/x86_64/gemm_ncopy_4.S:194: Error: undefined symbol RPREFETCHSIZE' in operation 
+../kernel/x86_64/gemm_ncopy_4.S:195: Error: undefined symbol RPREFETCHSIZE' in operation
+```
+则
+
+```bash
+[root@node21 ~]$ gmake clean
+[root@node21 ~]$ make BINARY=64 TARGET=NEHALEM
+```
+安装完成
+
+####2.vasp的安装
+
+在/opt/intel/composer_xe_2013.2.146/mkl/interfaces/fftw3xf 目录下执行
+
+```bash
+[root@node21 ~]$ make libintel64
+```
+生成链接库
+
+于/opt/intel/composer_xe_2013.2.146/mkl/include/fftw目录下把fftw3.f拷贝到你编译vasp的目录下
+
+1.  安装VASP.lib
+
+修改makefile
+
+```bash
+[root@node21 ~]$ cd vasp.lib
+[root@node21 ~]$ cp makefile.linux_ifc_P4 makefile
+```
+
+将
+
+```
+.........
+# C-preprocessor
+CPP     = gcc -E -P -C $*.F >$*.f
+FC=ifc          #修改
+
+CFLAGS = -O
+FFLAGS = -O0 -FI
+FREE   =  -FR
+.........
+```
+中的“FC=ifc”改为“FC=ifort”，接着
+
+
+```bash
+[root@node21 ~]$ make
+```
+完成后，在目录下生成libdmy.a文件
+
+
+2.  安装vasp
+
+修改makefile
+
+```bash
+[root@node21 ~]$ cd vasp.5.2
+[root@node21 ~]$ cp makefile.linux_ifc_P4 makefile
+```
+
+makefile修改为
+
+```
+SUFFIX=.f90
+
+
+FC=ifort       #需修改
+
+FCL=$(FC)
+
+
+
+
+CPP_ =  ./preprocess <$*.F | /usr/bin/cpp -P -C -traditional >$*$(SUFFIX)
+
+FFLAGS =  -FR -lowercase -assume byterecl -heap-arrays 64
+
+
+OFLAG=-O2 -ip 
+
+OFLAG_HIGH = $(OFLAG)
+OBJ_HIGH = 
+OBJ_NOOPT = 
+DEBUG  = -FR -O0
+INLINE = $(OFLAG)
+
+
+MKL_ROOT=/opt/intel/composer_xe_2013.2.146/mkl      #需修改
+MKL_PATH=$(MKLROOT)/lib/intel64                     #需修改
+
+MKL_FFTW_PATH=$(MKLROOT)/interfaces/fftw3xf/        #需修改
+
+
+BLAS=  /opt/GotoBLAS2/libgoto2.so                   #需修改
+
+
+LAPACK= ../vasp.5.lib/lapack_double.o
+
+
+
+
+
+LIB  = -limf -lm -L../vasp.5.lib -ldmy \
+     ../vasp.5.lib/linpack_double.o $(LAPACK) \
+     $(BLAS)
+
+
+LINK    = 
+
+
+
+FFT3D   = fft3dfurth.o fft3dlib.o
+
+
+
+
+
+
+FC=mpif90                  #需修改
+FCL=$(FC)  -mkl
+
+
+
+CPP    = $(CPP_) -DMPI  -DHOST=\"LinuxIFC\" -DIFC \
+     -DCACHE_SIZE=4000 -DPGF90 -Davoidalloc -DNGZhalf \
+     -DMPI_BLOCK=8000 \
+     -DRPROMU_DGEMV  -DRACCMU_DGEMV
+
+
+
+BLACS= -L$(MKL_PATH) -lmkl_blacs95_lp64              #需修改
+
+SCA= /opt/intel/composer_xe_2013.2.146/mkl/lib/intel64/libmkl_scalapack_lp64.a  /opt/intel/composer_xe_2013.2.146/mkl/lib/intel64/libmkl_blacs_intelmpi_lp64.a                  #需修改
+
+LAPACK=-L$(MKL_PATH) -lmkl_intel_lp64 -lmkl_sequential -lmkl_core -lpthread               #需修改
+
+
+
+
+LIB     = -L../vasp.5.lib -ldmy  \
+      ../vasp.5.lib/linpack_double.o $(LAPACK) \
+      $(SCA) $(BLAS)
+
+
+FFT3D   = fftmpi.o fftmpi_map.o fft3dfurth.o fft3dlib.o 
+
+INCS = -I$(MKLROOT)/include/fftw        #需修改
+
+
+BASIC=   symmetry.o symlib.o   lattlib.o  random.o   
+.........
+```
+
+其中，主要修改的地方是makefile中intel编译器的库位置，以及GotoBLAS2库位置，即
+
+编译器        第8行与第58行
+mkl库位置     第27行与第72行
+GotoBLAS2库   第33行
+
+
+安装
+
+```bash
+[root@node21 ~]$ make
+```
+
+完成后会在目录下生成名为“vasp”的可执行文件
+
+需要新建一个任务，测试是否安装成功
+
+
+
+###vasp过渡态功能的安装
+
+与没有过渡态功能的安装相同，首先在/opt/intel/composer_xe_2013.2.146/mkl/interfaces/fftw3xf 目录下执行“make libintel64”，拷贝intel/composer_xe_2013.2.146/mkl/include/fftw目录下的fftw3.f，解压安装VASP.lib，之后开始vasp过渡态功能的安装
+
+从网站“http://theory.cm.utexas.edu/vtsttools/”上下载vtstcode.tgz，vtstscripts.tgz文件，将文件解压到vasp的主目录下覆盖
+
+进入vasp主目录，更改main.F文件
+
+```
+CALL CHAIN_FORCE(T_INFO%NIONS,DYN%POSION,TOTEN,TIFOR, &
+     LATT_CUR%A,LATT_CUR%B,IO%IU6)
+```
+更改为
+
+```
+CALL CHAIN_FORCE(T_INFO%NIONS,DYN%POSION,TOTEN,TIFOR, &
+     TSIF,LATT_CUR%A,LATT_CUR%B,IO%IU6)
+```
+
+对于“hessian.F”, “dynconstr.F”, “dimer_heyden.F”, “gadget.F”这是个文件，保证在它们的头部有
+
+```
+USE main_mpi
+USE base 
+```
+
+这两个
+
+然后对于“dimer.F”, “chain.F”这两个文件，需要做一些修改
+
+
+```bash
+[root@node21 ~]$ sed -i 's/^\+#/#/' chain.F dimer.F
+```
+
+
+修改makefile
+
+```bash
+[root@node21 ~]$ cp makefile.linux_ifc_P4 makefile
+```
+
+在makefile中的“SOURCE=”一行中，在“chain.o”前添加以下内容
+
+```
+bfgs.o dynmat.o  instanton.o  lbfgs.o sd.o   cg.o dimer.o bbm.o \
+fire.o lanczos.o neb.o  qm.o opt.o
+```
+
+其余的修改则与没有过渡态功能的安装一样
+
+接下来就开始编译
+
+```bash
+[root@node21 ~]$ make
+```
+完成后会在目录下生成名为“vasp”的可执行文件
+
+需要新建一个过渡态的任务，测试是否安装成功
+
+
+###vasp5.4.1安装
+
+加入neb和WANNIER90功能
+
+
+主要是修改makefile.include文件，这里使用intel的mpi编译
+
+```
+# Precompiler options
+CPP_OPTIONS= -DMPI -DHOST=\"IFC91_ompi\" -DIFC \
+             -DCACHE_SIZE=4000 -DPGF90 -Davoidalloc \
+             -DMPI_BLOCK=8000 -DscaLAPACK -Duse_collective \
+             -DnoAugXCmeta -Duse_bse_te \
+             -Duse_shmem -Dtbdyn -DVASP2WANNIER90   #加入WANNIER90功能
+
+CPP        = fpp -f_com=no -free -w0  $*$(FUFFIX) $*$(SUFFIX) $(CPP_OPTIONS)
+
+FC         = mpiifort
+FCL        = mpiifort -mkl
+
+FREE       = -free -names lowercase
+
+FFLAGS     = -assume byterecl
+OFLAG      = -O2
+OFLAG_IN   = $(OFLAG)
+DEBUG      = -O0
+
+MKLROOT    =/opt/intel/intel_2015/composer_xe_2015.0.090/mkl
+MKL_PATH   = $(MKLROOT)/lib/intel64
+BLAS       =-L$(MKL_PATH) -lmkl_blacs_ilp64 -lmkl_intel_ilp64 -lmkl_sequential -lmkl_core -lpthread
+LAPACK     =-L$(MKL_PATH)  -lmkl_lapack95_ilp64 -lmkl_intel_ilp64 -lmkl_sequential -lmkl_core -lpthread
+#BLACS      = -lmkl_blacs_intel_ilp64
+BLACS      =-L$(MKL_PATH) -lmkl_blacs_intel_ilp64
+SCALAPACK  = $(MKL_PATH)/libmkl_scalapack_lp64.a $(MKL_PATH)/libmkl_scalapack_ilp64.a $(BLACS)   #intel中mkl库文件
+
+#OBJECTS    = fftmpiw.o fftmpi_map.o fftw3d.o fft3dlib.o \
+             $(MKLROOT)/interfaces/fftw3xf/libfftw3xf_intel.a
+OBJECTS    = fftmpiw.o fftmpi_map.o fftw3d.o fft3dlib.o /opt/fftw-3.3.6-pl2/lib/libfftw3f_mpi.a          #fftw的lib，这里是并行版lib
+INCS       = -I/opt/fftw-3.3.6-pl2/include  #fftw的iunclude路径
+
+LLIBS      = $(SCALAPACK) $(LAPACK) $(BLAS) /home/flw2/software/wannier90/wannier90-2.1.0/libwannier.a   #加入wannier90库文件
+```
+
+修改main.F文件
+
+进入src目录，更改main.F文件
+
+```
+CALL CHAIN_FORCE(T_INFO%NIONS,DYN%POSION,TOTEN,TIFOR, &
+     LATT_CUR%A,LATT_CUR%B,IO%IU6)
+```
+更改为
+
+```
+CALL CHAIN_FORCE(T_INFO%NIONS,DYN%POSION,TOTEN,TIFOR, &
+     TSIF,LATT_CUR%A,LATT_CUR%B,IO%IU6)
+```
+
+修改.object文件，在source下的chain.o行前加入
+
+
+```
+bfgs.o dynmat.o  instanton.o  lbfgs.o sd.o   cg.o dimer.o bbm.o \
+fire.o lanczos.o neb.o  qm.o opt.o\
+```
+
+然后编译即可
+
+
+###lammps的安装
+
+
+从官网下载lammps安装包，解压，并进入到lammps-*****/src/MKAE目录
+
+```bash
+[root@node21 ~]$ tar -zxf lammps-stable.tar.gz
+[root@node21 ~]$ cd lammps-stable/src/MAKE
+
+```
+
+使用intel编译器和其自带并行环境安装。修改Makefile.mpi文件
+
+```
+# mpi = MPI with its default compiler
+
+SHELL = /bin/sh
+
+# ---------------------------------------------------------------------
+# compiler/linker settings
+# specify flags and libraries needed for your compiler
+
+CC =		mpiicpc 
+OPTFLAGS =      -xHost -O2 -fp-model fast=2 -no-prec-div -qoverride-limits
+CCFLAGS =	-g -qopenmp -DLAMMPS_MEMALIGN=64 -no-offload \
+                -fno-alias -ansi-alias -restrict $(OPTFLAGS)
+SHFLAGS =	-fPIC
+DEPFLAGS =	-M                          #这部分的内容从OPTIONS
+                                        #目录中的Makefile.intel_cpu_intelmpi
+LINK =		mpiicpc                     #参考编译文件中拷贝过来，该文件适用
+LINKFLAGS =	-g -qopenmp $(OPTFLAGS)     #于intel编译器，intel 
+                                        #cpu以及intel并行环境
+LIB =           -ltbbmalloc
+SIZE =		size
+
+ARCHIVE =	ar
+ARFLAGS =	-rc
+SHLIBFLAGS =	-shared
+
+# ---------------------------------------------------------------------
+# LAMMPS-specific settings, all OPTIONAL
+# specify settings for LAMMPS features you will use
+# if you change any -D setting, do full re-compile after "make clean"
+
+# LAMMPS ifdef settings
+# see possible settings in Section 2.2 (step 4) of manual
+
+LMP_INC =	-DLAMMPS_GZIP -DLAMMPS_MEMALIGN=64
+
+# MPI library
+# see discussion in Section 2.2 (step 5) of manual
+# MPI wrapper compiler/linker can provide this info
+# can point to dummy MPI library in src/STUBS as in Makefile.serial
+# use -D MPICH and OMPI settings in INC to avoid C++ lib conflicts
+# INC = path for mpi.h, MPI compiler settings
+# PATH = path for MPI library
+# LIB = name of MPI library
+
+MPI_INC =   -DMPICH_SKIP_MPICXX -DOMPI_SKIP_MPICXX=1 -I/home/software/intel/parallel_studio_xe_2016_update2/compilers_and_libraries_2016.2.181/linux/mpi/intel64/include            # intel 并行的库头文件位置
+MPI_PATH = -L/home/software/intel/parallel_studio_xe_2016_update2/compilers_and_libraries_2016.2.181/linux/mpi/intel64/lib                # intel 并行的库位置
+MPI_LIB = -lmpi -lpthread      # intel 使用到的并行库
+
+# FFT library
+# see discussion in Section 2.2 (step 6) of manual
+# can be left blank to use provided KISS FFT library
+# INC = -DFFT setting, e.g. -DFFT_FFTW, FFT compiler settings
+# PATH = path for FFT library
+# LIB = name of FFT library
+
+FFT_INC =    -I/home/software/fftw-3.3.4/include	# FFT库头文件位置
+FFT_PATH = -L/home/software/fftw-3.3.4/lib           # FFT库位置
+FFT_LIB =	-lfftw3                                 # 使用到的FFT库
+
+# JPEG and/or PNG library
+# see discussion in Section 2.2 (step 7) of manual
+# only needed if -DLAMMPS_JPEG or -DLAMMPS_PNG listed with LMP_INC
+# INC = path(s) for jpeglib.h and/or png.h
+# PATH = path(s) for JPEG library and/or PNG library
+# LIB = name(s) of JPEG library and/or PNG library
+
+JPG_INC =  -I/home/lwfang/math_lib/jpeglib/include    # JPG库头文件位置
+JPG_PATH =  -L/home/lwfang/math_lib/jpeglib/lib       # JPG库位置
+JPG_LIB = -ljpeg                                      # 使用到的JPG库
+
+# ---------------------------------------------------------------------
+...............
+```
+
+若使用openmpi并行环境安装，则需修改Makefile.mpi文件
+
+复制OPTIONS目录下的Makefile.icc.openmpi到MAKE目录，修改如下
+
+```
+......................................
+export OMPI_CXX = icc
+CC =        mpicxx
+CCFLAGS =   -g -O3 -restrict
+SHFLAGS =   -fPIC                      
+                                       
+DEPFLAGS =  -M                         
+                                       
+LINK =      mpicxx                     
+LINKFLAGS = -g -O                      
+LIB = 
+SIZE =      size
+
+ARCHIVE =   ar
+ARFLAGS =   -rc
+SHLIBFLAGS =    -shared
+
+# ---------------------------------------------------------------------
+# LAMMPS-specific settings, all OPTIONAL
+# specify settings for LAMMPS features you will use
+# if you change any -D setting, do full re-compile after "make clean"
+
+# LAMMPS ifdef settings
+# see possible settings in Section 2.2 (step 4) of manual
+
+LMP_INC =   -DLAMMPS_GZIP
+
+# MPI library
+# see discussion in Section 2.2 (step 5) of manual
+# MPI wrapper compiler/linker can provide this info
+# can point to dummy MPI library in src/STUBS as in Makefile.serial
+# use -D MPICH and OMPI settings in INC to avoid C++ lib conflicts
+# INC = path for mpi.h, MPI compiler settings
+# PATH = path for MPI library
+# LIB = name of MPI library
+
+MPI_INC =       -DMPICH_SKIP_MPICXX -DOMPI_SKIP_MPICXX=1 -I/home/software/openmpi/include                           #openmpi并行库头文件位置
+MPI_PATH = -L/home/software/openmpi/lib   #openmpi并行库位置
+MPI_LIB = -lmpi -lpthread                 #需要的openmpi并行库
+
+# FFT library
+# see discussion in Section 2.2 (step 6) of manaul
+# can be left blank to use provided KISS FFT library
+# INC = -DFFT setting, e.g. -DFFT_FFTW, FFT compiler settings
+# PATH = path for FFT library
+# LIB = name of FFT library
+
+FFT_INC =    -I/home/software/fftw-3.3.4/include    # FFT库头文件位置
+FFT_PATH = -L/home/software/fftw-3.3.4/lib           # FFT库位置
+FFT_LIB =   -lfftw3                                 # 使用到的FFT库
+
+# JPEG and/or PNG library
+# see discussion in Section 2.2 (step 7) of manual
+# only needed if -DLAMMPS_JPEG or -DLAMMPS_PNG listed with LMP_INC
+# INC = path(s) for jpeglib.h and/or png.h
+# PATH = path(s) for JPEG library and/or PNG library
+# LIB = name(s) of JPEG library and/or PNG library
+
+JPG_INC =  -I/home/lwfang/math_lib/jpeglib/include    # JPG库头文件位置
+JPG_PATH =  -L/home/lwfang/math_lib/jpeglib/lib       # JPG库位置
+JPG_LIB = -ljpeg                                      # 使用到的JPG库 
+............................
+```
+
+修改后保存
+
+
+接下来的步骤无论是intel的并行和还是openmpi的并行环境，操作都相同。
+
+进入到lammps-*****/lib目录下，可以看到很多文件夹，这些文件夹都是package。如果需要使用，必须编译并配置package需要的依赖库。需要何种依赖库可以查看相应文件夹下的readme文件和官方文档说明。这里说明meam，reax的安装。
+
+进入meam文件夹下，有许多makefile文件，由于这里使用intel编译器，所以编译Makefile.lammps.ifort
+
+```bash
+[root@node21 ~]$ cd lammps-*****/lib
+[root@node21 ~]$ cd meam
+[root@node21 ~]$ make -f Makefile.lammps.ifort
+
+```
+
+编译完成后会生成Makefile.lammps文件，这就是需要配置的地方。修改文件
+
+```
+# Settings that the LAMMPS build will import when this package library is used
+
+meam_SYSINC = -I/home/software/intel/parallel_studio_xe_2016_update2/compilers_and_libraries_2016.2.181/linux/compiler/include  # intel 并行的库头文件位置
+meam_SYSLIB = -lifcore -lsvml -liompstubs5 -limf  # intel 用到的并行库，其中原文件中的-lompstub需要更改为-liompstubs5，应该是新版编译器的库更名了。所以需注意检查库是否在目录中
+meam_SYSPATH = -Lhome/software/intel/parallel_studio_xe_2016_update2/compilers_and_libraries_2016.2.181/linux/compiler/lib/intel64_lin  # intel 并行的库位置
+
+```
+
+修改后保存。
+
+
+同样进入reax文件夹中，编译,修改Makefile.lammps.ifort
+
+```bash
+[root@node21 ~]$ cd ../reax
+[root@node21 ~]$ make -f Makefile.lammps.ifort
+
+```
+
+```
+# Settings that the LAMMPS build will import when this package library is used
+
+reax_SYSINC = -I/home/software/intel/parallel_studio_xe_2016_update2/compilers_and_libraries_2016.2.181/linux/compiler/include        # intel 并行的库头文件位置
+reax_SYSLIB = -lifcore         # intel 用到的并行库
+reax_SYSPATH = -Lhome/software/intel/parallel_studio_xe_2016_update2/compilers_and_libraries_2016.2.181/linux/compiler/lib/intel64_lin            # intel 并行的库位置
+
+```
+
+修改后保存。
+
+进入lammps-*****/src目录下，开始选择想要安装的package
+
+```bash
+[root@node21 ~]$ lammps-*****/src
+[root@node21 ~]$ make yes-ASPHERE  #安装ASPHERE  package，可以在make后写多个yes-xxxxx，一次安装多个package
+[root@node21 ~]$ make no-ASPHERE   #卸载安装的ASPHERE  package，同样可以在make后写多个no-xxxxx，一次卸载安装的多个package
+[root@node21 ~]$ make yes-ASPHERE yes-CLASS2 yes-CORESHELL yes-DIPOLE yes-KSPACE yes-MANYBODY yes-MC yes-MEAM yes-MISC yes-MOLECULE yes-MPIIO yes-OPT yes-PERI yes-REAX yes-SHOCK yes-SNAP yes-SRD yes-USER-CG-CMM yes-USER-DIFFRACTION yes-USER-DPD yes-USER-LB yes-USER-REAXC yes-USER-TALLY
+```
+
+使用“make ps”命令可以查看安装package的情况，这里自己的package的情况如下：
+
+```
+Installed YES: package ASPHERE
+Installed  NO: package BODY
+Installed YES: package CLASS2
+Installed  NO: package COLLOID
+Installed  NO: package COMPRESS
+Installed YES: package CORESHELL
+Installed YES: package DIPOLE
+Installed  NO: package GPU
+Installed  NO: package GRANULAR
+Installed  NO: package KIM
+Installed  NO: package KOKKOS
+Installed YES: package KSPACE
+Installed YES: package MANYBODY
+Installed YES: package MC
+Installed YES: package MEAM
+Installed YES: package MISC
+Installed YES: package MOLECULE
+Installed YES: package MPIIO
+Installed  NO: package MSCG
+Installed YES: package OPT
+Installed YES: package PERI
+Installed  NO: package POEMS
+Installed  NO: package PYTHON
+Installed  NO: package QEQ
+Installed YES: package REAX
+Installed  NO: package REPLICA
+Installed  NO: package RIGID
+Installed YES: package SHOCK
+Installed YES: package SNAP
+Installed YES: package SRD
+Installed  NO: package VORONOI
+
+Installed  NO: package USER-ATC
+Installed  NO: package USER-AWPMD
+Installed YES: package USER-CG-CMM
+Installed  NO: package USER-CGDNA
+Installed  NO: package USER-COLVARS
+Installed YES: package USER-DIFFRACTION
+Installed YES: package USER-DPD
+Installed  NO: package USER-DRUDE
+Installed  NO: package USER-EFF
+Installed  NO: package USER-FEP
+Installed  NO: package USER-H5MD
+Installed  NO: package USER-INTEL
+Installed YES: package USER-LB
+Installed  NO: package USER-MANIFOLD
+Installed  NO: package USER-MGPT
+Installed  NO: package USER-MISC
+Installed  NO: package USER-MOLFILE
+Installed  NO: package USER-NC-DUMP
+Installed  NO: package USER-OMP
+Installed  NO: package USER-PHONON
+Installed  NO: package USER-QMMM
+Installed  NO: package USER-QTB
+Installed  NO: package USER-QUIP
+Installed YES: package USER-REAXC
+Installed  NO: package USER-SMD
+Installed  NO: package USER-SMTBQ
+Installed  NO: package USER-SPH
+Installed YES: package USER-TALLY
+Installed  NO: package USER-VTK
+
+```
+
+需要注意的是，如果没有安装meam，那么在使用lammps时，将无法使用meam势函数力场计算模拟。使用meam势时会报错，显示“nvalid pair style”的错误。所以选择安装package很重要，决定了lammps的功能。
+
+同时也不能过多安装package，因为有些需要依赖另外的一些库文件，这些库文件有时配置起来非常麻烦，很容易在编译的时候出错。那些不需要依赖外部库的可以全部安装，不过哪些需要哪些不需要依赖外部库这里并不清楚具体情况，所以如果有兴趣了解，需要搜索一些资料和实际的尝试。
+
+然后开始安装
+
+```bash
+[root@node21 ~]$ make mpi -j12   # -j12  表示12核并行编译，比单核快的多
+
+```
+
+没有报错，安装完成后会在src目录下生成名为lmp_mpi的可执行文件。
+
+可以新建一个简单的任务，运行该任务测试安装成功与否。或者进入到cd lammps-*****/examples中，使用自带的算例测试。
+
+
+
+lammps可以使用GPU加速计算，需要安装GPU包。
+
+在安装好显卡驱动和cuda后，修改lib/gpu目录下的makefile，将“CUDA_ARCH = -arch=sm_21”行中的“sm_21”中的数字改成计算机的GPU对应的计算能力数值(可以在显卡商网上查到)，将“CUDA_HOME = /opt/nvidia-cuda/cuda”中的路径修改为CUDA对应的路径。之后进入到src目录中执行“make yes-GPU”，添加GPU计算模块，然后编译即可。
+
+将下面内容写入Si.lmp.in中，建立测试计算，其中的Si.sw立场力场文件可以在lammps的安装包的potential中找到。
+
+```
+package         gpu  1
+units           metal
+
+atom_style      atomic
+boundary        p p p
+
+lattice         diamond 5.431
+region      box block 0 5 0 5 0 5
+create_box  1 box
+create_atoms    1 box
+mass            1 28
+velocity    all create 300 87287
+
+
+
+pair_style      sw/gpu
+pair_coeff      * * Si.sw Si
+
+timestep        1.0e-3
+neighbor        1.0 bin
+neigh_modify    every 1 delay 10 check no
+
+thermo          1000
+fix             1 all nve
+fix         2 all langevin 300 300 0.1 48278
+
+
+run             10000
+
+```
+
+然后执行计算
+
+
+```bash
+[root@node21 ~]$ mpirun -np 2 /home/flw2/software/lammps/lammps-31Mar17-gpu/src/lmp_mpi -pk gpu < Si.lmp.in > Si.lmp.out &
+
+```
+
+计算完成后，在输出的Si.lmp.out文件中可以看到
+
+```
+--------------------------------------------------------------------------
+- Using acceleration for sw/gpu:
+-  with 2 proc(s) per device.
+--------------------------------------------------------------------------
+Device 0: GeForce GT 520M, 1 CUs, 0.93/0.94 GB, 1.3 GHZ (Mixed Precision)
+--------------------------------------------------------------------------
+
+```
+
+表明使用GPU加速成功
+
+
+
+###Material studio的安装
+
+解压文件，进入目录，开始安装
+
+```bash
+[root@node21 ~]$ ./install
+
+```
+一路next安装完成后，开始安装license
+
+```bash
+[root@node21 ~]$ cd  /xxx/accelrys/LicensePack/etc/
+[root@node21 ~]$ source lp_profile 
+
+```
+
+修改license文件xxx.lic，将“hostname”改为(本机名)，将license文件文件复制到.../LicensePack/Licenses，安装license
+
+```bash
+[root@node21 ~]$ Accelrys/LicensePack/linux/bin
+[root@node21 ~]$ lp_install  xxxx.lic
+```
+
+修改 /etc/hosts，在文件后加上一行
+```
+192.168.0.xx(本机IP) node21(本机名) node21(本机名)
+```
+
+重启gateway
+
+```bash
+[root@node21 ~]$   ./xxx/accelrys/MaterialsStudio8.0/etc/Gateway/msgateway_control_18888 restart
+```
+
+复制msgateway_control_18888，并将其加入开机启动项中
+
+```bash
+[root@node21 ~]$  cp /opt/accelrys/MaterialsStudio8.0/etc/Gateway/msgateway_control_18888    /etc/rc.d/init.d/msgateway_control_18888
+[root@node21 ~]$  chkconfig --add /etc/rc.d/init.d/msgateway_control_18888
+```
+
+Material studio安装完成
+
+
+
+
+
+
+###Gaussian 09的安装
+
+
+解压文件，并更改文件夹权限
+
+```bash
+[root@node21 ~]$ tar -zxf g09-x86.tar.bz2 
+[root@node21 ~]$ chmod -R 750 g09
+```
+
+在g09文件夹中新建文件夹scrach，并更改权限
+
+```bash
+[root@node21 ~]$ mkdir g09/scrach 
+[root@node21 ~]$ chmod -R 755 g09/scrach
+```
+
+将下面内容加入环境变量文件.bashrc中,并将yourname改为自己用户名名称
+
+```
+#gaussian09
+export g09root=/home/yourusername
+GAUSS_EXEDIR=$g09root/g09/
+export GAUSS_SCRDIR=/home/yourusername/g09/scratch
+LD_LIBRARY_PATH=$g09root/g09/:$LD_LIBRARY_PATH
+PATH=$g09root/g09/:$PATH
+export g09root GAUSS_EXEDIR GAUSS_SCRDIR LD_LIBRARY_PATH PATH
+source $g09root/g09/bsd/g09.profile
+```
+
+使其生效
+
+```bash
+[root@node21 ~]$ source ~/.bahsrc
+```
+
+测试安装
+
+```bash
+[root@node21 ~]$ cd g09/tests/com
+[root@node21 ~]$ g09 test1.com &
+```
+
+如果能正常运行，安装成功。
+
+在安装之前，最好新建一个用户群组，将需要用Gaussian的户加入到群组中。
+
+
+###nwchem的安装
+
+####使用gcc编译器安装nwchem
+
+在使用gcc编译器安装好openmpi后，在环境变量.bashrc文件中加入以下内容：
+
+```bash
+export NWCHEM_TOP=/opt/nwchem-6.6  #nwchem的目录位置
+export NWCHEM_TARGET=LINUX64
+export NWCHEM_MODULES=all
+export USE_MPI=y
+export USE_MPIF=y
+export USE_MPIF4=y
+export MPI_LOC=/opt/openmpi-gcc/openmpi/   #gcc编译的openmpi的位置
+export MPI_LIB=/opt/openmpi-gcc/openmpi/lib  
+export MPI_INCLUDE=/opt/openmpi-gcc/openmpi/include  
+export LIBMPI="-lmpi_f90 -lmpi_f77 -lmpi -ldl -Wl,--export-dynamic -lnsl -lutil"
+export MRCC_METHODS=y
+export PYTHON_EXE=/usr/bin/python   #python的依赖
+export PYTHONVERSION=2.7    
+export USE_PYTHON64=yes
+export PYTHONPATH=/usr/local/lib/python2.7/site-packages
+export PYTHONHOME=/usr
+export PYTHONLIBTYPE=a
+export CCSDTQ=yes
+export USE_INTERNALBLAS=y  #使用自带的数学库安装
+```
+
+source生效后，进入nwchem开始安装
+
+```bash
+[root@node21 ~]$ cd nwchem-6.6/src
+[root@node21 ~]$ make nwchem_config  
+[root@node21 ~]$ make -j12   
+```
+
+-j12 表示12核并行编译，与编译openmpi一样，速度快的多
+
+编译完成，没有出错的话，在nwchem-6.6/bin/LINUX64目录下生成nwchem的可执行文件
+
+新建test.nw文件，写入以下内容
+
+```
+title "Nitrogen cc-pvtz SCF geometry optimization"
+geometry
+n 0 0 0
+n 0 0 1.08
+end
+basis
+n library cc-pvtz
+end
+task scf optimize   
+```
+然后开始测试nwchen
+
+```bash
+[root@node21 ~]$ nwchen test.nw > test.out &            #单线程
+[root@node21 ~]$ mpirun -np 4 test.nw > test.out &      #多线程  
+```
+
+mpirun 命令为gcc编译的openmpi
+然后查看输出，正常说明安装成功。
+
+####使用gcc编译器安装nwchem
+
+与使用gcc编译器安装基本相同，在安装时将加入环境变量里面的openmpi的目录改为gcc编译的openmpi位置，同时去掉
+```bash
+export CCSDTQ=yes
+```
+
+开始安装
+
+```bash
+[root@node21 ~]$ cd nwchem-6.6/src
+[root@node21 ~]$ make nwchem_config  
+[root@node21 ~]$ make FC=ifort CC=icc -j12   
+```
+
+编译完成后，同样在nwchem-6.6/bin/LINUX64目录下生成nwchem的可执行文件。接下来就可以测试安装是否成功。
+
+在实际安装过程中，我没有成功
+
+
+
+
+###siesta的安装
+
+最新的版本siesta-4.1-b3的安装与前面的版本有点差别
+
+仍旧是解压下载的文件siesta-4.1-b3.tar.gz，进入目录
+
+```bash
+[root@node21 ~]$ tar -xzf siesta-4.1-b3.tar.gz
+[root@node21 ~]$ cd siesta-4.1-b3/Obj    
+```
+
+开始安装
+
+```bash
+[root@node21 ~]$ sh ../Src/obj_setup.sh
+[root@node21 ~]$ cp -r ../Src/MPI/*  MPI/   #将Src/MPI中文件复制到Obj/MPI中
+```
+修改目录下生成的arch.make文件
+
+```bash
+...........
+SUFFIXES:
+.SUFFIXES: .f .F .o .c .a .f90 .F90
+SIESTA_ARCH = unknown
+CC = mpiicc                       #并行版icc编译器，这里为Intel并行版icc
+FPP = $(FC) -E -P
+FC = mpiifort                     #并行版fortran编译器，这里为Intel并行版ifort
+FC_SERIAL = ifort
+FFLAGS = -O2 -fPIC
+AR = ar
+RANLIB = ranlib
+SYS = nag
+SP_KIND = 4
+DP_KIND = 8
+KINDS = $(SP_KIND) $(DP_KIND)
+MPI_INTERFACE=/opt/intel/impi/5.0.1.035/intel64/lib/libmpifort.a  #并行版库位置，这里不能使用MPI目录下编译生成的libmpi_f90.a库，需要使用intel的impi中的并行库
+#MPI_INCLUDE=/opt/intel/impi/5.0.2.044/intel64/include/
+MPI_INCLUDE=.
+LDFLAGS =
+#COMP_LIBS = libsiestaLAPACK.a libsiestaBLAS.a
+FPPFLAGS = $(DEFS_PREFIX)-DFC_HAVE_ABORT -DMPI
+LIBS = -L/opt/intel/composer_xe_2015.0.090/mkl/lib/intel64 -I/opt/intel/composer_xe_2015.0.090/mkl/include  #mkl库的库文件以及其头文件位置
+LIBS +=  -lmkl_blas95_lp64
+LIBS +=  -lmkl_lapack95_lp64
+LIBS +=  -lmkl_scalapack_lp64
+LIBS +=  -lmkl_blacs_intelmpi_lp64
+LIBS +=  -lmkl_core -lmkl_intel_lp64 -lmkl_intel_thread -lmkl_rt
+LIBS +=  -liomp5 -lpthread -lm  #mkl库中的各个数学库和其他依赖库
+FFLAGS_DEBUG = -g -O1
+atom.o: atom.F
+    $(FC) -c $(FFLAGS_DEBUG) $(INCFLAGS) $(FPPFLAGS) $(FPPFLAGS_fixed_F) $<
+
+.c.o:
+    $(CC) -c $(CFLAGS) $(INCFLAGS) $(CPPFLAGS) $<
+.F.o:
+    $(FC) -c $(FFLAGS) $(INCFLAGS) $(FPPFLAGS) $(FPPFLAGS_fixed_F)  $<
+.F90.o:
+    $(FC) -c $(FFLAGS) $(INCFLAGS) $(FPPFLAGS) $(FPPFLAGS_free_F90) $<
+.f.o:
+    $(FC) -c $(FFLAGS) $(INCFLAGS) $(FCFLAGS_fixed_f)  $<
+.f90.o:
+    $(FC) -c $(FFLAGS) $(INCFLAGS) $(FCFLAGS_free_f90)  $<
+```
+修改完成后，make，进行编译安装
+
+安装完成，没有报错的话，安装完成后会在Obj目录下生成siesta的课可执行文件
+
+如果安装在最后一步生成siesta时报错，则一般是lapack，scalapack，blacs等数学库的配置出现问题
+
+接着新建一个任务，测试安装是否成功
+
+这里使用2015版的Intel编译器编译，尝试使用2017版编译失败。
+
+
+###Gamess的安装
+
+这里使用intel编译器安装2016版gamess。
+
+解压gamess
+
+```bash
+[root@node21 ~]$ tar -zxf 2016-Aug(R1).tar.gz
+
+```
+开始配置安装
+
+```bash
+[root@node21 ~]$ cd gamess
+[root@node21 gamess]$ ./config
+
+```
+接下来会出现多步选项，选择如下
+
+```
+[enter]
+linux64
+[enter]          #在当前位置安装
+[enter]          #在当前位置安装
+[enter]          #版本号为00
+ifort            #使用ifort编译gamess
+13               #使用ifort版本号为13，可以通过"ifort -v"查看
+[enter]   
+[enter]
+mkl              #使用mkl库
+/opt/intel/mkl   #intel mkl库的位置
+proceed
+[enter]
+[enter]
+sockets          #不使用并行
+no               #不尝试LIBCCHEM，这是用来通过nVidia的GPU加速HF和MP2任务用的，没有gpu加速卡，不需使用 
+
+```
+
+编译ddi
+
+```bash
+[root@node21 ~]$ cd ddi
+[root@node21 ddi]$ ./compddi
+[root@node21 ddi]$ mv  ddikick.x  ../      #将编译生成的ddikick.x移动到上一层目录，即gamess目录下
+```
+
+编译gamess
+
+```bash
+[root@node21 ~]$ cd ../
+[root@node21 gamess]$ ./compall >& complie.log &  #后台编译，编译信息写入complie.log文件
+
+```
+
+编译需要较长的时间，待编译完成后若在gamess目录项没有生恨gamess.00.x，则需手动链接产生可执行文件
+
+```bash
+[root@node21 gamess]$ ./lked gamess 00
+
+```
+
+ 配置运行环境
+
+建立gamess目录下建立scr初始缓存文件夹
+
+```bash
+[root@node21 gamess]$ mkdir scr
+```
+
+对gamess目录下rungms文件作如下修改：
+
+把set TARGET=sockets下面的三行改为
+
+```
+set SCR=/home/flw1/gamess/scr           #scr的绝对路径
+set USERSCR=/home/flw1/gamess/scr       #scr的绝对路径
+set GMSPATH=/home/flw1/gamess           #gamess的绝对路径
+```
+在
+把set TARGET=sockets前面加上一行，每次计算开始是都删除上次计算的初始缓存文件
+
+```bash
+rm -fr /home/flw1/gamess/scr/*
+```
+
+为多核计算，在rungms文件的"switch (`hostname`)"这行下面插入以下内容
+
+```
+         case xxx:              # xxx 为计算机的名称，可用hostname命令查看
+            set NNODES=1
+            set HOSTLIST=(`hostname`:cpus=$NCPUS)
+            breaksw
+````
+
+至此，安装配置完成。不过还需要测试安装是否成功
+
+
+```bash
+[root@node21 gamess]$ ./rungms test.gms.inp >& test.gms.out &       #单核
+[root@node21 gamess]$ ./rungms test.gms.inp 00 4 >& test.gms.out &  #4核并行
+```
+
+若输出文件中出现以下错误
+
+```
+......
+ DDI Process 0: error code 911
+ ddikick.x: application process 0 quit unexpectedly.
+ ddikick.x: Fatal error detected.
+ The error is most likely to be in the application, so check for
+ input errors, disk space, memory needs, application bugs, etc.
+ ddikick.x will now clean up all processes, and exit...
+ ddikick.x: Sending kill signal to DDI processes.
+......
+```
+
+则有可能是输入文件的格式或内容有问题
+
+
+###MOPAC2016的安装
+
+解压文件MOPAC2016_for_CentOS-6.zip
+
+```bash
+[root@node21 flw1]$ unzip MOPAC2016_for_CentOS-6.zip
+[root@node21 flw1]$ mv MOPAC  /opt/         #将目录移动到opt目录下
+[root@node21 flw1]$ cd /opt/MOPAC
+[root@node21 MOPAC]$ MOPAC2016.exe 11780405a29011200    激活MOPAC
+```
+至此MOPAC安装完成
+接着可以将"alias mopac='/opt/mopac/MOPAC2016.exe'"加入超环境变量中，这样就可以使用mopac
+
+提交计算的方式为
+
+```bash
+[root@node21 flw1]$ mopac test.mop.in &
+```
+
+###gpaw的安装
+
+安装好anaconda2后，使用pip安装ase（Atomic Simulation Environment）
+
+```bash
+[root@node21 flw1]$ pip install ase
+
+```
+
+自动安装完成ase后，开始安装libxc
+
+从官网上下载安装包，解压开始安装
+
+
+```bash
+ [root@node21 flw1]$ ./configure CC=icc --prefix="/home/flw/libxc" CFLAGS="-fPIC" 
+ [root@node21 flw1]$ make
+ [root@node21 flw1]$ make install
+
+```
+安装完成后，开始安装gpaw
+
+在开始安装gpaw之前需要重新安装openmpi，这里使用openmpi-2.1.0版
+
+```bash
+ [root@node21 flw1]$ tar -zxf  openmpi-2.1.0.tar.gz
+ [root@node21 flw1]$ cd  openmpi-2.1.0
+ [root@node21 flw1]$ ./configure --prefix="/home/flw/gpaw/openmpi" CC=icc CXX=icpc F77=ifort FC=ifort --disable-dlopen
+ [root@node21 flw1]$ make -j12     #-j12  表示12核并行编译  速度较单核快很多
+ [root@node21 flw1]$ make install
+
+```
+
+修改.bashrc文件
+
+```
+export LD_LIBRARY_PATH=/opt/intel/composer_xe_2013.2.146/mkl/lib/intel64:$LD_LIBRARY_PATH     #mkl库位置
+export PATH=/home/flw/gpaw/openmpi/bin:$PATH         #openmpi的mpirun位置
+export LD_LIBRARY_PATH=/home/flw/gpaw/openmpi/lib:$LD_LIBRARY_PATH  #openmpi的库位置
+export C_INCLUDE_PATH=/home/flw/gpaw/openmpi/include:$C_INCLUDE_PATH  #openmpi的头文件位置
+
+export C_INCLUDE_PATH=/home/flw/gpaw/fftw/include:$C_INCLUDE_PATH  #fftw的头文件位置
+export LD_LIBRARY_PATH=/home/flw/gpaw/fftw/lib:$LD_LIBRARY_PATH   #fftw的库位置
+
+export C_INCLUDE_PATH=/home/flw/gpaw/libxc/include:/home/flw/anaconda2/pkgs/python-2.7.13-0/include/python2.7:$C_INCLUDE_PATH
+export  #libxc的头文件位置以及anaconda2的python头文件位置 LD_LIBRARY_PATH=/home/flw/gpaw/libxc/lib:/home/flw/anaconda2/lib:/home/flw/anaconda2/lib/python2.7/config/:$LD_LIBRARY_PATH   #libxc的库位置以及anaconda2的python库位置
+
+export PATH=/home/flw/anaconda2/bin/bin/:$PATH
+```
+
+
+从官网上下载gpaw安装包，解压写改
+
+```python
+compiler = 'gcc'       #c编译器
+mpicompiler = 'mpicc'  #mpicc编译器
+mpilinker = 'mpicc'    #mpicc编译器
+# platform_id = ''
+scalapack = False
+
+if 1:
+    include_dirs += ['/home/flw/gpaw/libxc/include']           #libxc头文件位置
+    extra_link_args += ['/home/flw/gpaw/libxc/lib/libxc.a']    #libxc库位置
+    if 'xc' in libraries:
+        libraries.remove('xc')
+
+
+# Build MPI-interface into _gpaw.so:
+if 1:
+    compiler = 'mpicc'
+    define_macros += [('PARALLEL', '1')]
+    mpicompiler = 'mpicc'
+
+library_dirs += ['/opt/intel/composer_xe_2013.2.146/mkl/lib/intel64',"/home/flw/anaconda2/lib/python2.7/config/"]   #MKL数学库位置和libpython2.7.a的位置
+libraries = ['mkl_scalapack_lp64','mkl_intel_lp64','mkl_lapack95_lp64','mkl_blacs_openmpi_lp64','mkl_scalapack_lp64','mkl_intel_ilp64','mkl_lapack95_ilp64','mkl_blacs_openmpi_ilp64','mkl_intel_lp64' ,'mkl_sequential','mkl_core','pthread']
+  #scalapack、lapack、blacs库
+include_dirs += ['/opt/intel/composer_xe_2013.2.146/mkl/include']       #MKL头文件位置
+
+define_macros += [('GPAW_NO_UNDERSCORE_CBLACS', '1')]
+define_macros += [('GPAW_NO_UNDERSCORE_CSCALAPACK', '1')]
+
+
+mpi_library_dirs = ['/home/flw/gpaw/openmpi/lib']            #上面安装的openmpi并行库位置
+mpi_include_dirs = ['/home/flw/gpaw/openmpi/include']        #上面安装的openmpi头文件位置
+mpi_runtime_library_dirs = ['/home/flw/gpaw/openmpi/lib']    #上面安装的openmpi并行库位置
+```
+将环境变量加入.bash_profile中
+
+```bash
+export PYTHONHOME=/home/flw/anaconda2/bin:/home/flw/gpaw/gpaw-1.2.0/build/bin.linux-x86_64-2.7:/home/flw/gpaw/gpaw-1.2.0/build/scripts-2.7
+export PYTHONPATH=/home/flw/anaconda2/lib/python2.7/config/:/home/flw/anaconda2/pkgs/python-2.7.13-0/lib:/home/flw/anaconda2/pkgs/python-2.7.13-0/lib/python2.7/:/home/flw/anaconda2/lib/python2.7/site-packages:/home/flw/anaconda2/lib/python2.7:/home/flw/anaconda2/lib/python2.7/lib-dynload/:/home/flw/gpaw/gpaw-1.2.0/gpaw:/opt/intel/composer_xe_2015.0.090/mkl/lib/intel64
+#均是与anaconda2相关的路径位置
+
+```
+
+
+
+
+开始安装
+
+```bash
+ [root@node21 flw1]$  python setup.py install --user
+
+```
+安装成功后会在gpaw主目录下的tools文件夹下生成gpaw的可执行文件，将该位置加入环境变量中，并source生效
+
+从官网下载gpaw-setups，解压后将目录位置加入环境变量中
+
+```bash
+ [root@node21 flw1]$  export GPAW_SETUP_PATH=/home/flw/gpaw/gpaw-setups-0.9.20000:GPAW_SETUP_PATH
+
+```
+
+
+测试gpw
+
+```bash
+ [root@node21 flw1]$  gpaw test
+
+```
+如果测试ok，则表示安装没有问题
+
+
+#RASPA安装
+
+从github(https://github.com/numat/RASPA2)上下载源码，解压进入目录
+
+```bash
+[root@node21 flw1]$ unzip RASPA2.zip
+[root@node21 flw1]$ cd RASPA         
+```
+
+按照官方手册的说明进行安装
+
+```bash
+[root@node21 flw1]$ rm -rf autom4te.cache
+[root@node21 flw1]$ mkdir m4
+[root@node21 flw1]$ aclocal
+[root@node21 flw1]$ autoreconf -i
+[root@node21 flw1]$ automake --add-missing
+[root@node21 flw1]$ autoconf
+```
+
+除在删除autom4te.cache时，我在执行接下来的其他几条命令时，均出现“autom4te: cannot lock autom4te.cache”字样的错误提示。但忽略该提示继续进行，最后编译的程序可以正常运行。暂时不知道究竟出现何种问题。
+
+继续安装
+
+上面的命令执行完后，在目录下会生成configure文件
+
+```bash
+[root@node21 flw1]$ ./configure --prefix=/home/lwfang/bin/RASPA2-master/simulation  CC=icc LDFLAGS="-L/home/lwfang/math_lib/lapack-3.7.0 -L/home/lwfang/math_lib/fftw-3.3.5/lib" CPPFLAGS=-I/home/lwfang/math_lib/fftw-3.3.5/include
+       # --prefix= 设定安装的目录，最后安装的文件(bin，include，lib三个文件夹)会出现在该目录下；LDFLAGS=  设定库的位置，这里分别为lapack和fftw，其中fftw在congfigure时须加上“--enable-shared”参数；CPPFLAGS= 设置库头文件位置，这里为fftw
+[root@node21 flw1]$ make -j12
+[root@node21 flw1]$ make install
+```
+将“export RASPA_DIR=/home/lwfang/bin/RASPA2-master/simulation”的环境变量加入.bahsrc中，并source生效
+
+测试安装是否成功
+
+将以下内容写入methane.rsp.in文件中
+
+```
+SimulationType                  MonteCarlo
+NumberOfCycles                  100000
+NumberOfInitializationCycles    10000
+PrintEvery                      1000
+
+Box                             0
+BoxLengths                      30 30 30
+ExternalTemperature             300.0
+component 0 methane
+            TranslationProbability 1.0
+            CreateNumberOfMolecules 100
+```
+
+运行计算该文件
+
+```bash
+[root@node21 flw1]$ /home/lwfang/bin/RASPA2-master/simulation/bin/simulate  methane.rsp.in  > methane.rsp.out &
+```
+
+成功安装，则会在目录下Movies、Output、Restart、VTK四个文件夹。
+
+
+#Gromacs的安装
+
+从官网下载源码，解压进入目录
+
+```bash
+[root@node21 gromacs]$ tar -zxf gromacs-5.1.4.tar.gz
+[root@node21 gromacs-5.1.4]$ cd gromacs-5.1.4
+[root@node21 build]$ mkdir build
+[root@node21 build]$ cd build 
+[root@node21 build]$ cmake .. -DFFTWF_LIBRARY=/home/flw/work/gromacs/fftw-3.3.4/lib  -DFFTWF_INCLUDE_DIR=/home/flw/work/gromacs/fftw-3.3.4/include -DGMX_MPI=on  -DCMAKE_C_COMPILER=icc -DCMAKE_CXX_COMPILER=icpc   #需要设置好fftw的头文件和库的位置，其中库为libfftw3f.so，并且编译fftw configure时需加上--enable-float。编译器也最好设置，且必须与并行环境使用的编译器相同
+[root@node21 build]$ make -j12
+[root@node21 build]$ make install
+```
+
+安装完成后会在bin目录下生成gmx_mpi可执行文件。
+
+可以从官方网站"ftp://ftp.gromacs.org/pub/benchmarks/ "下载测试文件，测试安装是否成功。这里使用的是villin_vsites中的rf_verlet_vsites.mdp算例
+
+```bash
+[root@node21 build]$ gmx_mpi grompp -s rf_verlet_vsites.mdp > rf_verlet_vsites.out &     #单核运行
+
+[root@node21 build]$ mpirun -np 16 gmx_mpi mdrun  xxxxx.tpr > xxxxx.out &    #16核并行  必须使用tpr文件作为输入文件
+```
+
+
+
+#DFTB+的安装
+
+##arpack安装
+
+从官网下载arpack96.tar.gz和pack.tar.gz,解压后将pack中解压出来的文件夹直接覆盖arpack文件夹内容，具体可以参见pack中的readme文件
+
+修改ARmake.inc文件
+
+```
+.........
+home = /home/lwfang/bin/arpack/ARPACK  #arpack目录位置，ARmake.inc文件28行
+.........
+FC      = ifort     #fortran编译器，ARmake.inc第104行
+.........
+MAKE    = /usr/bin/make   #make命令位置，ARmake.inc第115行
+.........
+```
+
+编译
+
+```bash
+[root@node21 build]$ make all
+```
+编译完成后，在目录下生成libarpack_xxx.a库文件，即编译成功
+
+
+##DFTB+安装
+
+从官方网站上下载安装包dtbplus-17.1.tar.gz（这里是串行版，并行版需要注册下载，比较麻烦），解压文件,
+
+```bash
+[root@node21 build]$ tar -zxf   dtbplus-17.1.tar.gz
+[root@node21 build]$ cp sys/make.x86_64-linux-intel make.arch
+```
+
+修改make.arch文件
+
+```bash
+............
+# How to link specific libraries
+MKL_LIBDIR = /home/software/intel/parallel_studio_xe_2017_update2/mkl/lib/intel64   #mkl库文件位置
+LIB_BLAS   = -L$(MKL_LIBDIR) -Wl,--start-group \
+  -lmkl_intel_lp64 \
+  -lmkl_intel_thread \
+  -lmkl_core \
+  -Wl,--end-group
+LIB_LAPACK = -lmkl_lapack95_ilp64 -pthread  #lapack库
+
+# Any other libraries to be linked
+OTHERLIBS =   -lmkl_intel_lp64 -lmkl_intel_thread -lmkl_core  -lpthread -lm -liomp5  -L/home/lwfang/bin/arpack/ARPACK -larpack_linux
+ #其他必要库文件，其中larpack库需要自行编译后使用
+
+.............
+```
+
+联网状态下下载必要组件，或者也可以手动，如果下面的下载命令出现问题，dftd3为计算色散校正下载链接为https://github.com/aradi/dftd3-lib/archive/0.9.tar.gz，Slater-Koster的经验数据下载地址为http://www.dftb.org/fileadmin/DFTB/public/slako
+
+我在安装时遇到了使用下面 “./utils/get_opt_externals slako”出错的情况，将get_opt_externals文件中相应出错行75行修改为msg = "Invalid optional external"可以正常下载
+
+```bash
+[root@node21 build]$ ./utils/get_opt_externals dftd3
+[root@node21 build]$ ./utils/get_opt_externals slako
+```
+
+修改
+
+
+编译
+
+```bash
+[root@node21 build]$ make
+[root@node21 build]$ make install
+```
+
+编译成功后会在_intsall/bin目录下生成dfb+可执行文件
+
+#openmx安装
+
+在官方网站上下载源码包openmx3.8.tar.gz，解压进入到openmx3.8/source目录
+
+```bash
+[root@node21 home]$ tar -zxf openmx3.8.tar.gz
+[root@node21 home]$ cd openmx/source
+```
+
+修改makefile
+
+
+```
+................................
+CC = mpiicc -O2  -qopenmp         -I/opt/fftw-3.3.6-pl2/include   #intel C语言 并行编译器
+FC = mpiifort -O2  -qopenmp       -I/opt/fftw-3.3.6-pl2/include   #intel fortran语言 并行编译器
+LIB= -L/opt/intel/composer_xe_2015.0.090/mkl/lib/intel64 -mkl=parallel -lmkl_intel_ilp64 -lmkl_intel_thread -lmkl_core -lpthread -lifcore   \
+  -lmkl_blas95_ilp64  -lmkl_lapack95_ilp64  -lmkl_scalapack_ilp64  -lmkl_blacs_intelmpi_lp64  -I/opt/fftw-3.3.6-pl2/include -L/opt/fftw-3.3.6-pl2/lib -lfftw3  #主要是intel mkl库文件，以及fftw库文件位置
+................................
+```
+
+
+
+接着开始编译
+
+```bash
+[root@node21 source]$ make all -j6
+```
+
+编译完成后在当前目录下生成openmx可执行文件，接着测试是否成功
+
+```bash
+[root@node21 openmx3.8 ]$ mkdir h2o
+[root@node21 openmx3.8 ]$ cp work/H2O.dat  h2o/
+[root@node21 openmx3.8 ]$ cd h2o
+[root@node21 h2o ]$ mpirun -n 16 ../source/openmx  H2O.dat > H2O.out & # 16核并行
+```
+
+计算完成后，会在当前目录下生成许多文件，其中H2O.out的末尾会有 “The calculation was normally finished.”，表明编译成功。
+
+这里使用2015版的Intel编译器编译
+
+同样使用2017版可以编译成功，虽然有时可能提示有“warning(eri.c文件)”，并且最后会提示“warning:  Clock skew detected.  Your build may be incomplete.”，但经过实例测试，是可以计算的。
+
+
+```
+................................
+CC = mpiicc -O2   -qopenmp -I/opt/fftw-3.3.7/include \
+-I/opt/intel/compilers_and_libraries_2017.0.098/linux/mkl/include
+FC = mpiifort -O2   -qopenmp
+LIB=  -L/opt/intel/compilers_and_libraries_2017.0.098/linux/mkl/lib/intel64_lin -mkl=parallel -lmkl_intel_lp64 -lmkl_intel_thread -lmkl_core -lpthread -lifcore -lmpi    \
+  -lmkl_blas95_lp64  -lmkl_lapack95_lp64  -lmkl_scalapack_lp64  \
+-lmkl_blacs_intelmpi_lp64  
+  #主要是intel mkl库文件，以及fftw库文件位置
+................................
+```
+
+编译时候发现，openmx似乎编译不够稳定，有时出现错误，但“make clean”后再尝试编译却又能成功
+
+
+##potfit安装
+
+在官网(https://www.potfit.net/wiki/doku.php?id=start)下载源代码，解压进入文件夹中
+
+```bash
+[root@node21 openmx3.8 ]$ tar -zxf potfit-20171129.tar.gz
+[root@node21 openmx3.8 ]$ cd potfit
+```
+
+修改makefile.inc
+
+```
+......................................
+# Currently the following SYSTEMs are available:
+# x86_64-icc        64bit Intel Compiler
+# x86_64-gcc        64bit GNU Compiler
+# x86_64-clang      64bit LLVM Compiler
+# i686-icc          32bit Intel Compiler
+# i686-gcc          32bit GNU Compiler
+# kim-toolchain     use the KIM toolchain via kim-api-build-config
+
+SYSTEM = x86_64-icc    #系统和编译器的类型
+
+# Base directory of your installation of the MKL or ACML
+
+MKLDIR      = /opt/intel/composer_xe_2015.0.090/mkl/   #mkl库位置
+ACML4DIR    = /opt/acml4.4.0/gfortran64
+ACML5DIR    = /opt/acml/gfortran64
+LIBMDIR     = /opt/acml/libm
+
+.............................................
+```
+
+开始编译
+
+```bash
+[root@node21 openmx3.8 ]$ make potfit_meam_stress_mpi  
+```
+
+这里编译的是并行版(mpi)的包含应力(stress)的拟合MEAM势(meam)的potfit，可以看到的是编译得到的potfit的功能的控制由关键词控制的，具体的关键词的在官网可以了解到
+
+
+
+##ORCA安装
+
+需要注册申请，获得ORCA编译好的二进制文件，与guassian类似。同时需要准备好使用gcc编译好的openmpi，并将bin和lib目录放入到环境变量中，使ORCA可以并行计算。解压获得的压缩文件到文件夹，并将文件夹目录放入到环境变量中，如下
+
+```bash
+export  PATH=$PATH:/home/flw1/software/ORCA/orca_4_0_1_2_linux_x86-64_shared_openmpi202
+export  LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/home/flw1/software/ORCA/orca_4_0_1_2_linux_x86-64_shared_openmpi202  #这里安装的是共享库版本，需要设置共享库的位置
+export  orcapath=/home/flw1/software/ORCA/orca_4_0_1_2_linux_x86-64_shared_openmpi202
+```
+三个目录均是相同的，即ORCA目录
+
+接下来测试安装是否成功，将下面内容写入CO.orca.in中
+
+```
+! HF def2-TZVP
+
+%scf 
+convergence tight 
+end
+
+* xyz 0 1 
+C 0.0 0.0 0.0 
+O 0.0 0.0 1.13 
+*
+```
+
+运行计算
+
+```bash
+[root@node21 openmx3.8 ]$ orca CO.orca.in > CO.orca.out &
+```
+
+计算完成后会生成CO.orca.gbw  CO.orca.out  CO.orca.prop  CO.orca_property.txt是个输出文件，其中在CO.orca_property.txt中是计算得到的数据的总结。
+
+如果系统安装了x window界面，运行时可能会出现类似“can't open display”的报错，使用命令“yum groupremove "X Window System"”卸载“X Window”后，就可以正常运行了。原因不明，似乎是ORCA界面功能冲突的问题。
+
+
+##abinit安装
+
+在官方下载源码文件，解压进入文件夹主目录，开始配置
+
+```bash
+[root@node21 openmx3.8 ]$ tar -zxf abinit-8.6.3.tar.gz
+[root@node21 openmx3.8 ]$ cd abinit-8.6.3
+[root@node21 openmx3.8 ]$ ./configure  --prefix=/home/flw2/software/abinit/abinit-8.6.3   --with-linalg-libs="-L/opt/intel/intel_2015/composer_xe_2015.0.090/mkl/lib/intel64  -lmkl_intel_lp64 -lmkl_intel_thread -lmkl_core -lpthread -lifcore -lmpi      -lmkl_blas95_ilp64  -lmkl_lapack95_lp64  -lmkl_scalapack_lp64  -lmkl_blacs_intelmpi_lp64" --with-linalg-incs="-I/opt/intel/intel_2015/composer_xe_2015.0.090/mkl/include" --with-fft-flavor=fftw3 --with-fft-incs="-I/opt/fftw-3.3.6-pl2/include"  --with-fft-libs="-L/opt/fftw-3.3.6-pl2/lib -lfftw3f" --enable-openmp --enable-mpi  --with-mpi-incs="-I/opt/intel/intel_2015/impi/5.0.1.035/intel64/include" --with-mpi-libs="-L/opt/intel/intel_2015/impi/5.0.1.035/intel64/lib -lmpi"  --with-libxc-incs="-I/opt/libxc-4.0.4/include" --with-libxc-libs="-L/opt/libxc-4.0.4/lib -lxc"  --enable-64bit-flags="yes" --with-linalg-flavor="mkl" CC=mpiicc FC=mpiifort 
+# 配置中主要的内容是MKL库文件的路径以及头文件位置，FFTW库及头文件位置，libxc库文件以及头文件位置，将以上设置好后，按“enter”开始配置
+
+```
+
+配置环境过程中会自动检查库文件，因此只要路径设置合理就应该会成功，当然仍旧需要在环境变量中加入mkl ，fftw，libxc的库文件，并“source”生效
+
+之后便可以开始编译
+
+```bash
+[root@node21 openmx3.8 ]$ make multi multicore=4  # 4核并行编译
+```
+
+编译正常并完成后，便可以开始测试。进入到test文件夹，
+
+
+```bash
+[root@node21 openmx3.8 ]$ python runtest v1  # 4核并行编译
+```
+
+若测试计算大部分或全部成功，这表示安装成功。
+
+尝试在centos7上使用2017和2015版 intel 及 intel impi编译，编译通过，但计算测试几乎全部出错，多次尝试，错误依旧，原因未知。改在centos6.5上使用2015版 intel 及 intel impi编译，编译及测试无问题。
+
+
+##cp2k安装
+
+在官网下载源码，解压进入主目录中的makefiles文件夹，在主目录中的arch文件夹中创建“intel.ssmp”文件，编写配置
+
+```bash
+PERL     = perl
+CC       = mpiicc
+CPP      = cpp
+FC       = mpiifort
+LD       = $(FC)
+CFLAGS   = -O2 -nofor-main
+AR       = ar -r
+CPPFLAGS = -traditional -C -O1 -nofor-main $(DFLAGS) -P -I/opt/fftw-3.3.6-pl2/include  
+DFLAGS   =   -D__INTEL -D__FFTSG -D__parallel -D__SCALAPACK -D__BLACS -D__MKL -D__FFTW3 
+FCFLAGS  = $(DFLAGS) $(INTEL_INC)   -msse2 -heap-arrays 64 -funroll-loops -fpp -free -nofor-main
+LDFLAGS  = $(FCFLAGS)
+INTEL_INC = -I/opt/intel/intel_2015/composer_xe_2015.0.090/mkl/include
+LIBS     =  -L/opt/intel/intel_2015/composer_xe_2015.0.090/mkl/lib/intel64  -lmkl_scalapack_lp64  -lmkl_cdft_core -lmkl_intel_lp64 -lmkl_intel_thread -lmkl_core -lmkl_blacs_intelmpi_lp64 -liomp5 -lpthread -lm -ldl 
+LIBS     += -L/opt/fftw-3.3.6-pl2/lib/ -lfftw3f
+
+OBJECTS_ARCHITECTURE = machine_intel.o
+```
+
+其中仍旧主要是mkl ，fftw，libxc的库文件及头文件位置，这里没有使用libxc库。编译安装时发现，其中库文件的顺序很重要，写错可能会编译出错，因此尽量不要自行修改其中库文件顺序可内容，只需修改库文件路径。
+
+开始编译安装
+
+```bash
+[root@node21 makefiles ]$ make -j4 ARCH='intel' VERSION='ssmp'  # 4核并行编译，注意到ARCH与VERSION的内容合起来就是配置文件的名称
+```
+
+编译过程中可能会遇到编译到dbcsr_tensor_test.F或dbcsr_tensor_unittest.F时出错，经网上查找资料，有网友说，开发者在cp2k的Google Groups上说，这时删掉cp2k.*.*/src/dbcsr_tensor中的这两个文件姐可以了。2015，2016版intel编译器存在这个问题，安装时发现2017版也存在这个问题。这两个文件似乎是与测试相关，因此不影响主要计算功能
+
+安装完成后，可以在cp2k.*.*/exe/intel下找到可执行文件cp2k.ssmp，即编译成功的可执行文件。可以在test目录下选择一个测试算例文件，测试计算知否正常。
+
+
+##GPUMD的安装
+
+在安装GPUMD(使用GPU做分子动力学计算的软件)前需要先安装CUDA和显卡驱动，这里不述，直接进入GPUMD的安装。
+
+从github(https://github.com/brucefan1983/GPUMD)上下载源代码包，并解压进入src目录中
+
+```bash
+[root@node21 openmx3.8 ]$ tar -zxf GPUMD.tar.gz
+[root@node21 openmx3.8 ]$ cd GPUMD/src
+[root@node21 openmx3.8 ]$ make
+```
+
+编译成功后会在src目录中生成gpumd可执行文件
+
+这里我使用的是一个旧笔记本电脑，显卡是gt520，在安装过程中发现需要对makefile文件做一些修改。
+
+首先是显卡有一个计算能力的参数(这个可以在显卡商官网上查到),如果显卡的算力小于35(gt520算力为20)，那么需要下载较低版本的GPUMD(这里直接使用的是版本最低的)和较低版本的cuda(支持算力为20编译选项)，同时需要对makefile做修改，将第四行“CFLAGS = -O3 -DUSE_LDG -DUSE_DP -arch=sm_35”中的“sm_35”的“35”修改为使用的显卡对应的算力值，然后编译即可。
+
+实际测试发现，GPUMD的计算速度确实很快，比使用GPU加速的lammps快很多。
+
+
+##QC_tools的安装
+
+QC_tools(https://github.com/JoshuaSBrown/QC_Tools/wiki)是用来基于gsussian的计算结果计算分子间电荷转移积分的一个程序。
+
+在GitHub上下载QC_tools源码包，解压编译
+
+
+```bash
+[root@node21 software ]$ tar -zxf qc_tools.tar.gz
+[root@node21 software ]$ cd qc_tools
+[root@node21 cd qc_tools ]$ mkdir build
+[root@node21 build ]$ cd build
+[root@node21 build ]$ cmake ../
+[root@node21 build ]$ make
+```
+
+
+这里需要使用cmake和gcc，gcc版本需要大于4.8.1，这里使用的是4.8.2，可以编译完成正常。
+
+编译完成后，在GAUSSIANFILES文件夹中有用作测试的算例。
+
+
+##wainner90的安装
+
+下载wainner90源码包，解压进入目录
+
+```bash
+[root@node21 software ]$ tar -zxf wannier90-2.1.0.tar.gz
+[root@node21 wannier90-2.1.0 ]$ cd wannier90-2.1.0
+[root@node21 wannier90-2.1.0 ]$ cp ./config/make.inc.ifort ./make.inc
+```
+
+修改make.inc文件
+
+```
+#=====================================================
+# For Linux with intel version 11/12 on 64bit machines
+#=====================================================
+F90 = ifort
+COMMS=mpi
+MPIF90=mpiifort
+FCOPTS=-O2 
+LDOPTS=-O2 
+
+#========================================================
+# Intel mkl libraries. Set LIBPATH if not in default path
+#========================================================
+
+LIBDIR = /opt/intel/intel_2015/composer_xe_2015.0.090/mkl/lib/intel64  #intel编译器mkl库目录
+LIBS   =  -L$(LIBDIR) -lmkl_core -lmkl_intel_lp64 -lmkl_sequential -lpthread
+```
+
+之后直接编译
+
+
+```
+[root@node21 wannier90-2.1.0 ]$ make       #编译生成wannier90.x和postw90.x
+[root@node21 wannier90-2.1.0 ]$ make lib   #编译生成libwannier.a
+```
+
+编译生成的libwannier.a库文件可用于编译vasp，有网友提到5.2版本的需要使用1.2版的wainner90。这里编译的是5.4版的vasp，2.1版本可以正常编译vasp。
+
+
+#win平台上pymetgen结合enumlib的安装
+
+下载enumlib，并解压安装
+
+安装前，需要修改enumlib/src和enumlib/symlib/src中的Makefile，在文件前加入“FC=gfortran”（这里使用的是mingw），如
+
+```bash
+......................
+# Shell
+SHELL       = /bin/bash
+
+F90=gfortran       #设定编译器为mingw中的gfortran
+
+# enumlib library paths
+LBD1 = ../symlib/src
+......................
+```
+
+然后先后进入到enumlib/symlib/src和enumlib/src中，运行“make”，编译生成库文件，之后在enumlib/src中运行“make enum.x”和“make makestr.x”，会在该目录下生成“enum.x”和“makestr.x”文件。这里需要将文件名改为“enum.exe”和“makestr.exe”，这样才能运行。更多的内容可以查看readme.md文件的内容。
+
+
+接下来需要修改pymatgen中调用enumlib的设置，以便能正常运行(因为元版本是似乎为在linux运行准备的)。
+
+修改的只有Anaconda3\Lib\site-packages\pymatgen\command_line\enumlib_caller.py文件
+
+
+修改enumlib可执行文件的的位置
+
+
+```python
+......................
+# Favor the use of the newer "enum.x" by Gus Hart instead of the older
+# "multienum.x"
+enum_cmd = which('enum.x') or which('multienum.x')
+enum_cmd =  "C:\pro_Program\enumlib-1.0.8\src\enum.exe"  #enum.exe的路径
+# prefer makestr.x at present
+makestr_cmd = which('makestr.x') or which('makeStr.x') or which('makeStr.py')
+makestr_cmd = "C:\pro_Program\enumlib-1.0.8\src\makestr.exe"  #makestr.exe的路径
+......................
+```
+
+之后修改调用enumlib的设置。直接搜索“close_fds=True”，会有两处，将“True”修改为“False”即可，之后保存。
+
+这样pymatgen就可以正常调用enumlib，来对结构进行取代和替换的计算。
+
