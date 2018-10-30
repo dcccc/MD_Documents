@@ -1,0 +1,342 @@
+###mingw64安装
+在官网上下载mingw64的安装程序，然后直接安装。安装完成后加入环境变量。
+
+在“我的电脑”上右键打开 属性-高级系统设置-高级-环境变量，选中path，点击编辑-添加，在系统环境变量的path中加入mingw64相应的编译器位置，如
+
+```bash
+…………\\mingw64\\bin
+```
+然后确定，退出。打开命令行界面，输入“gcc -v”，然后回车，如出现以下内容则安装成功
+
+
+```bash
+C:\\Users\\dcc>gcc -v
+Using built-in specs.
+COLLECT_GCC=gcc
+COLLECT_LTO_WRAPPER=D:/prof_programfiles/minggw/mingw64/bin/../libexec/gcc/x86_64-w64-mingw32/5.3.0/lto-wrapper.exe
+Target: x86_64-w64-mingw32
+Configured with: ../../../src/gcc-5.3.0/
+…………………………
+x86_64-w64-mingw32-static/lib
+Thread model: posix
+gcc version 5.3.0 (x86_64-posix-seh-rev0, Built by MinGW-W64 project)
+
+C:\Users\dcc>
+```
+
+
+###MYSY2的安装
+在官网上下载mingw64的安装程序，然后直接安装。
+
+配置编译器为gcc，配置步骤如下
+
+打开“……\\msys2\\etc\\profile"文件
+
+```
+.......
+  MINGW_MOUNT_POINT=/mingw64   #修改
+  PATH="D:\prof_programfiles\minggw\mingw64\bin:${MSYS2_PATH}${ORIGINAL_PATH:+:${ORIGINAL_PATH}}"        #将编译器的位置修改gcc编译器位置
+  PKG_CONFIG_PATH="${MINGW_MOUNT_POINT}/lib/pkgconfig:${MINGW_MOUNT_POINT}/share/pkgconfig"
+  ACLOCAL_PATH="${MINGW_MOUNT_POINT}/share/aclocal:/usr/share/aclocal"
+  MANPATH="${MINGW_MOUNT_POINT}/share/man:${MANPATH}"
+......
+```
+
+或者直接使用“ppacman -S gcc”安装gcc编译器，这样就不用配置。
+
+然后打开“MYSY 64bit”，输入“gcc -v”命令检查是否安装成功。
+
+输入“ppacman -S make”回车，安装make编译环境。同时如果需要安装其他的环境依赖，可以使用“ppacman”命令，如同“yum”一样使用及额可以了，详细的可以搜索。
+
+
+
+###GSL（GNU Scientific Library）的编译安装
+
+在官网下载GSL的源代码文件，解压后在MSYS下安装
+
+```bash
+dcc@D MINGW64 tar -zxf gsl-2.3.tar.gz
+dcc@D MINGW64 cd /gsl-2.3
+dcc@D MINGW64 ./configure
+dcc@D MINGW64 make
+dcc@D MINGW64 make install 
+
+```
+
+编译安装完成后，相关的库文件和头文件在“……\\msys2\\mingw64”目录下。将“……\\msys2\\mingw64\\bin”中的libgslcblas-0.dll和libgsl-19.dll复制到“C:\\window\\system32”文件夹中。
+
+将以下内容写入gsl_test.cpp文件中
+
+```cpp
+#include <stdio.h>
+#include <gsl/gsl_sf_bessel.h>
+ int
+ main (void)
+ {
+   double x = 5.0;
+   double y = gsl_sf_bessel_J0 (x);
+   printf ("J0(%g) = %.18e\n", x, y);
+   return 0;
+ }
+```
+
+使用gcc编译运行
+
+```bash
+dcc@D MINGW64 g++  -std=c++11  gsl_test.cpp -ID:\\prof_programfiles\\msys2\\mingw64\\include     -LD:\\prof_programfiles\\msys2\\mingw64\\lib  -lgsl -lgslcblas -lm -o gsl_test.exe    
+#注意上面命令中的各项的顺序，后面各项的顺序不能随意修改，其中包含的三个文件的路径根据需要修改为gsl编译时安装的库文件和头文件相应位置。
+dcc@D MINGW64 ./gsl_test.exe
+J0(5) = -1.775967713143382600e-001
+```
+如果结果如上，则表示安装成功。linux上的安装应该比Windows上简单，这里不述。
+
+如果使用sublime编译的话，需要修改“Sublime Text Build 3083 x64\\Data\\Packages\\User\\C++.sublime-build”文件
+
+
+```
+"variants": 
+	[
+		{	
+		"name": "Run in sublime",
+        	"shell_cmd": "g++ -Wall -std=c++11  \"$file\" -ID:\\prof_programfiles\\msys2\\mingw64\\include     -LD:\\prof_programfiles\\msys2\\mingw64\\lib  -lgsl -lgslcblas -lm -o \"$file_base_name\"  && cmd /c ${file_path}/${file_base_name}", 
+		}
+	]
+
+#注意shell cmd那一行，后面各项的顺序不能随意修改，其中包含的三个库文件的路径根据需要修改为gsl编译时安装的库文件和头文件相应位置。
+```
+
+
+###eign的使用
+
+在官网下载eign的源代码文件，解压后放在合适的目录下
+
+
+```cpp
+#include <iostream>  
+#include <Eigen/Dense>  
+  
+//using Eigen::MatrixXd;  
+using namespace Eigen;  
+using namespace Eigen::internal;  
+using namespace Eigen::Architecture;  
+  
+using namespace std;  
+  
+  
+int main()  
+{  
+    Vector4d v1;  
+    v1<< 1,2,3,4;  
+    cout<<"v1=\n"<<v1<<endl;  
+  
+    VectorXd v2(3);  
+    v2<<1,2,3;  
+    cout<<"v2=\n"<<v2<<endl;  
+  
+    Array4i v3;  
+    v3<<1,2,3,4;  
+    cout<<"v3=\n"<<v3<<endl;  
+  
+    ArrayXf v4(3);  
+    v4<<1,2,3;  
+    cout<<"v4=\n"<<v4<<endl;  }
+```
+
+将下面内容保存再eign_test.cpp中，使用gcc编译运行
+
+```bash
+dcc@D MINGW64 g++ -std=c++11  eign_test.cpp -ID:\prof_programfiles\eigen  -o eign_test.exe    
+#注意上面命令中的各项的顺序，其中包含的一个路径根据需要修改为eign相应主目录位置。
+dcc@D MINGW64 ./eign_test.exe
+```
+如果运行结果无误，则表示成功。
+
+###Anaconda2的安装
+
+再官网下载合适的linux版的Anaconda2，然后传到计算机上，开始安装(推荐非root用户安装)
+
+
+```bash
+[flw@node21 flw]$ chmod +x Anaconda2-4.3.0-Linux-x86_64.sh
+[flw@node21 flw]$ ./Anaconda2-4.3.0-Linux-x86_64.sh
+```
+
+接下来第一步直接enter，第二步yes，第三步选择安装的位置，第四步设定环境变量，安装完成。然后退出重新登陆。
+
+```bash
+export PYTHONHOME=/home/flw/anaconda2/bin:/home/flw/gpaw/gpaw-1.2.0/build/bin.linux-x86_64-2.7:/home/flw/gpaw/gpaw-1.2.0/build/scripts-2.7
+export PYTHONPATH=/home/flw/anaconda2/lib/python2.7/config/:/home/flw/anaconda2/pkgs/python-2.7.13-0/lib:/home/flw/anaconda2/pkgs/python-2.7.13-0/lib/python2.7/:/home/flw/anaconda2/lib/python2.7/site-packages:/home/flw/anaconda2/lib/python2.7:/home/flw/anaconda2/lib/python2.7/lib-dynload/:/home/flw/gpaw/gpaw-1.2.0/gpaw:/opt/intel/composer_xe_2015.0.090/mkl/lib/intel64
+#均是与anaconda2相关的路径位置
+```
+
+然后运行python，测试是否安装成功。windows上安装较简单，这里不述。
+
+在windows上使用mingw作为python的编译器，而非ms的vc，那么需要在Lib\distutils目录下修改(不存在则新建)distutils.cfg，写入
+
+```
+[build] 
+compiler = mingw32 
+```
+
+接着修改该目录下的cygwinccompiler.py文件，将关键词“-mno-cygwin”替换为“”，保存文件。那么修改完成，这样python在安装包时默认使用gcc(需先配置好)编译。
+
+
+###Python并行库mpi4py的安装
+
+直接“pip install mpi4py”安装mpi4py，此后到mpich官网上下载windows下的并行软件Microsoft MPI，安装之后就可以，不需要配置。linux上则可以直接使用openmpi的并行环境，不需要安装其他的并行环境。
+
+```python
+#coding:utf-8
+import time
+from mpi4py import MPI
+ 
+comm = MPI.COMM_WORLD
+rank = comm.Get_rank()
+size = comm.Get_size()
+# time.sleep(10)
+print("hello world")
+print("my rank is: %d" %rank) 
+```
+保存以上代码为mpi_test.py,然后运行测试，如果运行结果大致如下，则安装成功。
+
+```
+C:\Users\dcc\Desktop>mpiexec -np 3 python mpi_test.py
+hello world
+my rank is: 1
+hello world
+my rank is: 0
+hello world
+my rank is: 2
+
+```
+
+###安装pypy
+
+
+在下载地址中包含各个版本的pypy，有centos、redhat、ubuntu、debian等等.自行选择，我这边是centos6，如下：
+
+（注意安装顺序,libs一定要先安装）
+
+```bash
+# rpm -ivh http://dl.fedoraproject.org/pub/epel/6/x86_64/pypy-libs-2.0.2-1.el6. x86_64.rpm
+Retrieving http://dl.fedoraproject.org/pub/epel/6/x86_64/pypy-libs-2.0.2-1.el6. x86_64.rpm
+warning: /var/tmp/rpm-tmp.DTV0uQ: Header V3 RSA/SHA256 Signature, key ID    0608b895: NOKEY
+Preparing...                ########################################### [100%]
+   1:pypy-libs              ########################################### [100%]
+# rpm -ivh http://dl.fedoraproject.org/pub/epel/6/x86_64/pypy-2.0.2-1.el6.  x86_64.rpm
+Retrieving http://dl.fedoraproject.org/pub/epel/6/x86_64/pypy-2.0.2-1.el6.  x86_64.rpm
+warning: /var/tmp/rpm-tmp.upV9H2: Header V3 RSA/SHA256 Signature, key ID    0608b895: NOKEY
+Preparing...                ########################################### [100%]
+   1:pypy                   ########################################### [100%]
+# rpm -ivh http://dl.fedoraproject.org/pub/epel/6/x86_64/pypy-devel-2.0.2-1.el6 .x86_64.rpm
+Retrieving http://dl.fedoraproject.org/pub/epel/6/x86_64/pypy-devel-2.0.2-1.el6 .x86_64.rpm
+warning: /var/tmp/rpm-tmp.YbOckH: Header V3 RSA/SHA256 Signature, key ID    0608b895: NOKEY
+Preparing...                ########################################### [100%]
+   1:pypy-devel             ########################################### [100%]
+```
+
+pypy的用法与python相同。windows下直接在官网下载安装就可以了。
+
+
+
+###Anaconda2的安装
+
+再官网下载合适的linux版的Anaconda2，然后传到计算机上，开始安装(推荐非root用户安装)
+
+
+```bash
+[flw@node21 flw]$ chmod +x Anaconda2-4.3.0-Linux-x86_64.sh
+[flw@node21 flw]$ ./Anaconda2-4.3.0-Linux-x86_64.sh
+```
+
+接下来第一步直接enter，第二步yes，第三步选择安装的位置，第四步设定环境变量，安装完成。然后退出重新登陆。
+
+由于centos自带低版本的python，因此需要重新设置
+
+```bash
+[flw@node21 flw]$ unset PYTHONHOME
+[flw@node21 flw]$ unset PYTHONPATH
+```
+
+然后运行python，测试是否安装成功。windows上Anaconda的安装较简单，这个可以再网络搜索具体内容。
+
+
+###lapack的安装
+
+在官网下载lapack的源文件，复制到服务器上就可以开始安装
+
+解压文件，然后进入目录中将make.inc.example复制一份，命名为make.inc
+
+```bash
+[flw@node21 flw]$ tar -zxf lapack-3.7.0.tgz
+[flw@node21 flw]$ cd lapack-3.7.0
+[flw@node21 flw]$ cp make.inc.example make.inc
+
+```
+
+修改make.inc。
+
+```
+.........
+FORTRAN  = gfortran           #编译器，这里使用gfortran，也可以使用ifort
+OPTS     = -O3 -frecursive    #编译器优化选项
+DRVOPTS  = $(OPTS)
+NOOPT    = -O0 -frecursive
+LOADER   = gfortran           #调用库的编译器，与前边使用的编译器一致
+LOADOPTS
+.........
+CC = gcc                      #c编译器，这里使用gcc，也可以使用icc
+CFLAGS = -O3                  #编译器优化选项
+.........
+
+```
+
+修改完后，输入“make”回车就开始编译。编译完后在目录下生成liblapack.a，这个就是我们需要的数学库。
+
+
+
+###scalapack的安装
+
+在官网下载scalapack的源文件，复制到服务器上就可以开始安装
+
+解压文件，然后进入目录中将SLmake.inc.example复制一份，命名为SLmake.inc
+
+修改SLmake.inc
+
+```
+.........
+FC            = mpif90
+CC            = mpicc 
+NOOPT         = -O0
+FCFLAGS       = -O3
+CCFLAGS       = -O3
+.........
+BLASLIB       = -lblas
+LAPACKLIB     = /opt/math_laibray/lapack-3.7.0/liblapack.a     #编译的lapack数学库
+LIBS          = $(LAPACKLIB) $(BLASLIB)
+```
+
+然后输入“make”回车，编译完成后在目录下生成libscalapack.a库文件。
+
+
+#fftw安装
+
+从官网下载源码，解压进入目录
+
+```bash
+[root@node21 flw]$ tar -zxf fftw-3.3.6-pl2.tar.gz
+[root@node21 flw]$ cd fftw-3.3.6-pl2
+[root@node21 fftw-3.3.6-pl2]$ ./configure --prefix=/home/flw/fftw-3.3.6-pl2  --enable-mpi --enable-float --enable-shared  CC=icc MPICC=mpicc #设置编译器 mpicc并行编译器对应的编译器相同  
+[root@node21 fftw-3.3.6-pl2]$ make -j12 
+[root@node21 fftw-3.3.6-pl2]$ make install
+```
+
+安装完成无错误后，设置环境变量
+
+将下面内容加入.bashrc文件中，source生效
+
+```
+export LD_LIBRARY_PATH=/opt/fftw-3.3.6-pl2/lib:$LD_LIBRARY_PATH
+export C_INCLUDE_PATH=/opt/fftw-3.3.6-pl2/include:$C_INCLUDE_PATH
+export CPLUS_INCLUDE_PATH=/opt/fftw-3.3.6-pl2/include:$CPLUS_INCLUDE_PATH
+```
